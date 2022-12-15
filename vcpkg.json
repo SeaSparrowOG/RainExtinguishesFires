@@ -1,0 +1,22 @@
+{
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+    "name": "rain-extinguishes-fires",
+    "version-string": "1.0.0",
+    "port-version": 0,
+    "description": "Simple SKSE plugin that allows papyrus scritps to query explosions from projectiles.",
+    "homepage": "",
+    "license": "Apache-2.0",
+    "features": {
+        "plugin": {
+            "description": "Build the SKSE plugin.",
+            "dependencies": [
+              "articuno",
+              "simpleini",
+              "commonlibsse-ng"
+            ]
+        }
+    },
+    "default-features": [
+        "plugin"
+    ]
+}
