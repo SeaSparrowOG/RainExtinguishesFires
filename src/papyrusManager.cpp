@@ -26,6 +26,11 @@ namespace PapyrusManager {
 
 	RE::EnchantmentItem* GetAmmoEnchantment(VM*, StackID a_StackID, RE::StaticFunctionTag*, RE::Actor* a_akAggressor)
 	{
+        if (!a_akAggressor) {
+
+            return nullptr;
+        }
+
         const auto process = a_akAggressor->GetActorRuntimeData().currentProcess;
         const auto middleHigh = process ? process->middleHigh : nullptr;
         const auto bothHands = middleHigh ? middleHigh->bothHands : nullptr;
