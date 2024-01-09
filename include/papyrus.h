@@ -14,11 +14,13 @@ namespace Papyrus {
 
 	class Papyrus : public ISingleton<Papyrus> {
 	public:
+		void AddFireToRegistry(RE::TESObjectREFR* a_fire);
 		bool IsRaining();
 		void RegisterFormForWeatherEvent(const RE::TESForm* a_form);
 		void RegisterFormForExtinguishEvent(const RE::TESForm* a_form);
 		void RegisterFormForCellChangeEvent(const RE::TESForm* a_form);
 		void RegisterFormForRelightEvent(const RE::TESForm* a_form);
+		void RemoveFireFromRegistry(RE::TESObjectREFR* a_fire);
 		void SendWeatherChangeEvent(RE::TESWeather* a_weather);
 		void SendExtinguishEvent(RE::TESObjectREFR* a_fire, RE::TESForm* a_offVersion, bool a_dyndolodFire);
 		void SendRelightEvent(RE::TESObjectREFR* a_fire);
@@ -58,5 +60,8 @@ namespace Papyrus {
 
 		//Is it raining? Actually pouring down?
 		bool isRaining;
+
+		//Fires take appreciable time to reload due to "Utility.Wait()".
+		std::unordered_map<RE::TESObjectREFR*, bool>   frozenFiresRegister;
 	};
 }

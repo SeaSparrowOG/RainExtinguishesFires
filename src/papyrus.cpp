@@ -114,6 +114,10 @@ namespace Papyrus {
 	}
 
 	void Papyrus::SendExtinguishEvent(RE::TESObjectREFR* a_fire, RE::TESForm* a_offVersion, bool a_dyndolodFire) {
+		if (this->frozenFiresRegister.find(a_fire) != this->frozenFiresRegister.end()) {
+			return;
+		}
+		this->frozenFiresRegister[a_fire] = true;
 		std::vector<RE::TESObjectREFR*> additionalExtinguishes = std::vector<RE::TESObjectREFR*>();
 
 		auto* referenceExtraList = &a_fire->extraList;
@@ -159,6 +163,11 @@ namespace Papyrus {
 	}
 
 	void Papyrus::SendRelightEvent(RE::TESObjectREFR* a_fire) {
+		if (this->frozenFiresRegister.find(a_fire) != this->frozenFiresRegister.end()) {
+			return;
+		}
+		this->frozenFiresRegister[a_fire] = true;
+
 		this->relightFire.QueueEvent(a_fire);
 	}
 
@@ -178,6 +187,18 @@ namespace Papyrus {
 
 	void Papyrus::RegisterFormForRelightEvent(const RE::TESForm* a_form) {
 		this->relightFire.Register(a_form);
+	}
+
+	void Papyrus::RemoveFireFromRegistry(RE::TESObjectREFR* a_fire) {
+		if (this->frozenFiresRegister.find(a_fire) != this->frozenFiresRegister.end()) {
+			this->frozenFiresRegister.erase(a_fire);
+		}
+	}
+
+	void Papyrus::AddFireToRegistry(RE::TESObjectREFR* a_fire) {
+		if (this->frozenFiresRegister.find(a_fire) == this->frozenFiresRegister.end()) {
+			frozenFiresRegister[a_fire] = true;
+		}
 	}
 
 	std::vector<int> GetVersion(STATIC_ARGS) {
@@ -229,6 +250,15 @@ namespace Papyrus {
 		}
 	}
 
+	void FreezeFire(STATIC_ARGS, RE::TESObjectREFR* a_fire) {
+		if (!a_fire || !a_fire->Is3DLoaded()) return;
+		Papyrus::GetSingleton()->AddFireToRegistry(a_fire);
+	}
+
+	void UnFreezeFire(STATIC_ARGS, RE::TESObjectREFR* a_fire) {
+		Papyrus::GetSingleton()->RemoveFireFromRegistry(a_fire);
+	}
+
 	void SetRainingFlag(STATIC_ARGS, bool a_isRaining) {
 		Papyrus::GetSingleton()->SetIsRaining(a_isRaining);
 	}
@@ -241,6 +271,8 @@ namespace Papyrus {
 		BIND_EVENT(RegisterForRelightEvent, true);
 		BIND(ExtinguishAllLoadedFires);
 		BIND(SetRainingFlag);
+		BIND(FreezeFire);
+		BIND(UnFreezeFire);
 	}
 
 	bool RegisterFunctions(VM* a_vm) {
