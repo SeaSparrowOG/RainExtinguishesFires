@@ -6,3 +6,5 @@
 /.vs
 /buildae-old
 /out/build/x64-debug
+/build
+/build
