@@ -57,6 +57,15 @@
       }
     },
     {
+      "name": "ae-old",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/buildae-old",
+      "cacheVariables": {
+        "BUILD_SKYRIMAE": true,
+        "BUILD_SKYRIMAE_640": true
+      }
+    },
+    {
       "name": "vr",
       "hidden": true,
       "binaryDir": "${sourceDir}/buildvr",
@@ -93,6 +102,16 @@
         "vs2022",
         "vr"
       ]
+    },
+    {
+      "name": "vs2022-windows-vcpkg-ae-old",
+      "inherits": [
+        "cmake-dev",
+        "vcpkg",
+        "windows",
+        "vs2022",
+        "ae-old"
+      ]
     }
   ],
   "buildPresets": [
@@ -109,6 +128,11 @@
     {
       "name": "vs2022-windows-vcpkg-vr",
       "configurePreset": "vs2022-windows-vcpkg-vr",
+      "configuration": "Release"
+    },
+    {
+      "name": "vs2022-windows-vcpkg-ae-old",
+      "configurePreset": "vs2022-windows-vcpkg-ae-old",
       "configuration": "Release"
     }
   ]

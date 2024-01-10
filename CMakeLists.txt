@@ -5,6 +5,7 @@ set(VR_VERSION 2)
 set(AE_VERSION 1)
 
 # ---- Options ----
+option(BUILD_SKYRIMAE_640 "Build for 1.6.640 using an older version of Commonlib" TRUE)
 option(BUILD_SKYRIMVR "Build for Skyrim VR" OFF)
 option(BUILD_SKYRIMAE "Build for Skyrim AE" OFF)
 
@@ -16,16 +17,31 @@ macro(set_from_environment VARIABLE)
 endmacro()
 
 macro(find_commonlib_path)
-	if(CommonLibName AND NOT ${CommonLibName} STREQUAL "")
-		# Check extern
-		find_path(CommonLibPath
-			include/REL/Relocation.h 
-			PATHS extern/${CommonLibName})
+	if(BUILD_SKYRIMAE_640)
+		if(CommonLibName AND NOT ${CommonLibName} STREQUAL "")
+			# Check extern
+			find_path(CommonLibPath
+				include/REL/Relocation.h 
+				PATHS extern/${CommonLibName})
 
-		if(${CommonLibPath} STREQUAL "CommonLibPath-NOTFOUND")
-			# Check path
-			set_from_environment(${CommonLibName}Path)
-			set(CommonLibPath ${${CommonLibName}Path})
+			if(${CommonLibPath} STREQUAL "CommonLibPath-NOTFOUND")
+				# Check path
+				set_from_environment(${CommonLibName}Path)
+				set(CommonLibPath ${${CommonLibName}Path})
+			endif()
+		endif()
+	else() 
+		if(CommonLibName AND NOT ${CommonLibName} STREQUAL "")
+			# Check extern
+			find_path(CommonLibPath
+				include/REL/Relocation.h 
+				PATHS extern/${CommonLibName})
+
+			if(${CommonLibPath} STREQUAL "CommonLibPath-NOTFOUND")
+				# Check path
+				set_from_environment(${CommonLibName}Path)
+				set(CommonLibPath ${${CommonLibName}Path})
+			endif()
 		endif()
 	endif()
 endmacro()
@@ -35,7 +51,12 @@ set_from_environment(VCPKG_ROOT)
 if(BUILD_SKYRIMAE)
 	add_compile_definitions(SKYRIM_AE)
 	add_compile_definitions(SKYRIM_SUPPORT_AE)
-	set(CommonLibName "CommonLibSSE")
+
+	if(BUILD_SKYRIMAE_640)
+		set(CommonLibName "CommonLibSSEOld")
+	else() 
+		set(CommonLibName "CommonLibSSE")
+	endif()
 	set_from_environment(SkyrimAEPath)
 	set(SkyrimPath ${SkyrimAEPath})
 	set(SkyrimVersion "Skyrim AE")
@@ -190,7 +211,7 @@ target_include_directories(
 target_link_libraries(
 	${PROJECT_NAME}
 	PRIVATE
-	${CommonLibName}::${CommonLibName}
+	CommonLibSSE::CommonLibSSE
 	frozen::frozen
 	JsonCpp::JsonCpp
 )
