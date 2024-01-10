@@ -85,7 +85,14 @@ namespace Settings {
 
 				fireRegistry->RegisterPair(litForm, offFireData);
 				fireRegistry->RegisterReversePair(offForm, litForm);
-				_loggerInfo("    >Created entry for {}.", clib_util::editorID::get_editorID(litForm));
+
+				std::string baseEDID = clib_util::editorID::get_editorID(litForm);
+				if (baseEDID.empty()) {
+					_loggerInfo("    >Created entry for {} -> {}.", baseFormIDstr, baseSource);
+				}
+				else {
+					_loggerInfo("    >Created entry for {} -> {}.", baseEDID, baseSource);
+				}
 			}
 		}
 		return true;

@@ -97,15 +97,15 @@ namespace Papyrus {
 			float weatherPct = RE::Sky::GetSingleton()->currentWeatherPct;
 			float precipitation = (- 0.2f) * a_weather->data.precipitationBeginFadeIn; //fadeBegin is int8_t
 			float passedTime = weatherPct * weatherTransitionTime / 100.0f;
-			float remainingTime = precipitation - passedTime + 4.0f;
+			float remainingTime = precipitation - passedTime;
 
-			if (remainingTime < 0.0f) remainingTime = 0.0f;
+			if (remainingTime < 1.0f) remainingTime = 1.0f;
 
 			this->weatherTransition.QueueEvent(true, remainingTime);
 			this->currentWeather = a_weather;
 		}
 		else if (bWasRaining && !bIsRaining) {
-			this->weatherTransition.QueueEvent(false, 0.0f);
+			this->weatherTransition.QueueEvent(false, 1.0f);
 		}
 	}
 
@@ -124,11 +124,15 @@ namespace Papyrus {
 		bool hasEnableChildren = referenceExtraList ? referenceExtraList->HasType(RE::ExtraDataType::kEnableStateChildren) : false;
 
 		if (hasEnableChildren && !a_dyndolodFire) {
+			this->frozenFiresRegister.erase(a_fire);
 			return;
 		}
 		else if (hasEnableChildren && a_dyndolodFire) {
 			std::string editorID = clib_util::editorID::get_editorID(a_fire->GetBaseObject()->As<RE::TESForm>());
-			if (!editorID.contains("DYNDOLOD")) return;
+			if (!editorID.contains("DYNDOLOD")) {
+				this->frozenFiresRegister.erase(a_fire);
+				return;
+			}
 		}
 
 		if (a_dyndolodFire) {
