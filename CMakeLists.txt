@@ -5,7 +5,7 @@ set(VR_VERSION 2)
 set(AE_VERSION 1)
 
 # ---- Options ----
-option(BUILD_SKYRIMAE_640 "Build for 1.6.640 using an older version of Commonlib" OFF)
+option(SUPPORT_PRE1130 "Build for 1.6.640 using an older version of Commonlib" ON)
 option(BUILD_SKYRIMVR "Build for Skyrim VR" OFF)
 option(BUILD_SKYRIMAE "Build for Skyrim AE" OFF)
 

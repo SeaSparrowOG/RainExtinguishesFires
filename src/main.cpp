@@ -98,7 +98,7 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface * a_skse, SKSE::PluginInfo * a_info)
 {
     a_info->infoVersion = SKSE::PluginInfo::kVersion;
-    a_info->name = "Enchantment Effects Extender";
+    a_info->name = "Rain Extinguishes Fires";
     a_info->version = 1;
 
     const auto ver = a_skse->RuntimeVersion();
