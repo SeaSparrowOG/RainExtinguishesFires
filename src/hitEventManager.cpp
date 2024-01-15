@@ -93,7 +93,7 @@ namespace HitManager {
 		}
 
 		if (needsFire) {
-			Papyrus::Papyrus::GetSingleton()->SendRelightEvent(hitRef);
+			Papyrus::Papyrus::GetSingleton()->SendRelightEvent(hitRef, true);
 		}
 		else {
 			Papyrus::Papyrus::GetSingleton()->SendExtinguishEvent(hitRef, offVersion.offVersion, offVersion.dyndolodFire);

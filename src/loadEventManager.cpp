@@ -38,9 +38,12 @@ namespace LoadManager {
 		if (!referenceBaseObject) return continueEvent;
 
 		auto offVersion = FireRegistry::FireRegistry::GetSingleton()->GetMatch(referenceBaseObject);
-		if (!offVersion.offVersion) return continueEvent;
-
-		Papyrus::Papyrus::GetSingleton()->SendExtinguishEvent(eventReference, offVersion.offVersion, offVersion.dyndolodFire);
+		if (offVersion.offVersion) {
+			Papyrus::Papyrus::GetSingleton()->SendExtinguishEvent(eventReference, offVersion.offVersion, offVersion.dyndolodFire);
+		}
+		else if (FireRegistry::FireRegistry::GetSingleton()->GetOffMatch(referenceBaseObject)) {
+			Papyrus::Papyrus::GetSingleton()->SendRelightEvent(eventReference);
+		}
 		return continueEvent;
 	}
 
@@ -63,6 +66,7 @@ namespace LoadManager {
 		if (cell->IsInteriorCell()) {
 			//Moved from exterior to interior.
 			if (!this->wasInInterior) {
+				Papyrus::Papyrus::GetSingleton()->ResetFrozenMaps();
 				Papyrus::Papyrus::GetSingleton()->SendPlayerChangedInteriorExterior(true);
 			}
 			this->wasInInterior = true;

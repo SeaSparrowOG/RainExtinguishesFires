@@ -69,12 +69,10 @@ namespace Papyrus {
 		if (!a_weather) return;
 
 		if (!currentWeather) {
-			currentWeather = a_weather;
-		}
-		else {
 			currentWeather = RE::Sky::GetSingleton()->lastWeather;
-			if (!currentWeather) currentWeather = a_weather;
 		}
+
+		if (!currentWeather) return;
 
 		if (!FireRegistry::FireRegistry::GetSingleton()->IsValidLocation()) return;
 
@@ -92,9 +90,10 @@ namespace Papyrus {
 			bIsRaining = true;
 		}
 
+		float weatherTransitionTime = 25.0f;
+		float weatherPct = RE::Sky::GetSingleton()->currentWeatherPct;
+
 		if (!bWasRaining && bIsRaining) {
-			float weatherTransitionTime = 30.0f;
-			float weatherPct = RE::Sky::GetSingleton()->currentWeatherPct;
 			float precipitation = (- 0.2f) * a_weather->data.precipitationBeginFadeIn; //fadeBegin is int8_t
 			float passedTime = weatherPct * weatherTransitionTime / 100.0f;
 			float remainingTime = precipitation - passedTime;
@@ -105,7 +104,14 @@ namespace Papyrus {
 			this->currentWeather = a_weather;
 		}
 		else if (bWasRaining && !bIsRaining) {
-			this->weatherTransition.QueueEvent(false, 1.0f);
+			float clearPrecipitation = (-0.2f) * a_weather->data.precipitationEndFadeOut;
+			float passedTime = weatherPct * weatherTransitionTime / 100.0f;
+			float remainingTime = clearPrecipitation - passedTime;
+
+			if (remainingTime < 1.0f) remainingTime = 1.0f;
+
+			this->weatherTransition.QueueEvent(false, remainingTime);
+			this->currentWeather = a_weather;
 		}
 	}
 
@@ -147,32 +153,15 @@ namespace Papyrus {
 				}
 			}
 		}
-
-		//TODO: This.
-		/*
-		auto* settingsSingleton = Settings::Settings::GetSingleton();
-
-		if (settingsSingleton->SearchForLights()) {
-			auto* response = GetNearestReferenceOfType(a_fire, 200.0f, RE::FormType::Light);
-			if (response) additionalExtinguishes.push_back(response);
-		}
-
-		if (settingsSingleton->SearchForSmoke()) {
-			auto* response = GetNearestReferenceOfType(a_fire, 200.0f, RE::FormType::MovableStatic);
-			if (response) additionalExtinguishes.push_back(response);
-		}
-		*/
-
 		this->extinguishFire.QueueEvent(a_fire, a_offVersion, additionalExtinguishes);
 	}
 
-	void Papyrus::SendRelightEvent(RE::TESObjectREFR* a_fire) {
+	void Papyrus::SendRelightEvent(RE::TESObjectREFR* a_fire, bool a_bForce) {
 		if (this->frozenFiresRegister.find(a_fire) != this->frozenFiresRegister.end()) {
 			return;
 		}
 		this->frozenFiresRegister[a_fire] = true;
-
-		this->relightFire.QueueEvent(a_fire);
+		this->relightFire.QueueEvent(a_fire, a_bForce);
 	}
 
 	void Papyrus::SetIsRaining(bool a_isRaining) { this->isRaining = a_isRaining; }
@@ -199,6 +188,10 @@ namespace Papyrus {
 		}
 	}
 
+	void Papyrus::ResetFrozenMaps() {
+		this->frozenFiresRegister.clear();
+	}
+
 	void Papyrus::AddFireToRegistry(RE::TESObjectREFR* a_fire) {
 		if (this->frozenFiresRegister.find(a_fire) == this->frozenFiresRegister.end()) {
 			frozenFiresRegister[a_fire] = true;
@@ -212,6 +205,10 @@ namespace Papyrus {
 		response.push_back(0);
 
 		return response;
+	}
+
+	bool IsRaining(STATIC_ARGS) {
+		return Papyrus::GetSingleton()->IsRaining();
 	}
 
 	void RegisterForExtinguishEvent(STATIC_ARGS, const RE::TESForm* a_form) {
@@ -277,6 +274,7 @@ namespace Papyrus {
 		BIND(SetRainingFlag);
 		BIND(FreezeFire);
 		BIND(UnFreezeFire);
+		BIND(IsRaining);
 	}
 
 	bool RegisterFunctions(VM* a_vm) {

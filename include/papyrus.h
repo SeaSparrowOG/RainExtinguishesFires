@@ -21,9 +21,10 @@ namespace Papyrus {
 		void RegisterFormForCellChangeEvent(const RE::TESForm* a_form);
 		void RegisterFormForRelightEvent(const RE::TESForm* a_form);
 		void RemoveFireFromRegistry(RE::TESObjectREFR* a_fire);
+		void ResetFrozenMaps();
 		void SendWeatherChangeEvent(RE::TESWeather* a_weather);
 		void SendExtinguishEvent(RE::TESObjectREFR* a_fire, RE::TESForm* a_offVersion, bool a_dyndolodFire);
-		void SendRelightEvent(RE::TESObjectREFR* a_fire);
+		void SendRelightEvent(RE::TESObjectREFR* a_fire, bool a_bForce = false);
 		void SendPlayerChangedInteriorExterior(bool a_movedToExterior);
 		void SetIsRaining(bool a_isRaining);
 
@@ -47,7 +48,7 @@ namespace Papyrus {
 		* Function for relighting an extinguished fire.
 		* @param Reference* The unlit fire to relight.
 		*/
-		SKSE::RegistrationSet < RE::TESObjectREFR*> relightFire{ "OnFireRelightEvent"sv };
+		SKSE::RegistrationSet < RE::TESObjectREFR*, bool> relightFire{ "OnFireRelightEvent"sv };
 
 		/**
 		* Event called when the player moves from an interior to an exterior or vice-versa.
