@@ -69,7 +69,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
             break;
         }
 
-        _loggerInfo("All pre-game operation succeeded.");
+        _loggerInfo("Rain Extinguishes Fires has initialized. Version: 5.0.0");
         break;
     }
     default:
@@ -80,8 +80,8 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 #ifdef SKYRIM_AE
 extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
     SKSE::PluginVersionData v;
-    v.PluginVersion(REL::Version(1));
-    v.PluginName("Enchantment Effects Extender");
+    v.PluginVersion(REL::Version(5));
+    v.PluginName("Rain Extinguishes Fires");
     v.AuthorName("SeaSparrow");
     v.UsesAddressLibrary();
     v.UsesUpdatedStructs();
@@ -109,7 +109,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface * 
         > SKSE::RUNTIME_VR_1_4_15_1
 #	endif
         ) {
-        _logger::critical(FMT_STRING("Unsupported runtime version {}"), ver.string());
+        SKSE::log::critical(FMT_STRING("Unsupported runtime version {}"), ver.string());
         return false;
     }
 
@@ -128,7 +128,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a_
     _loggerInfo("    >1.6.1130 Version.");
 #endif
 #else 
-    _loggerInfo("    >1.6.97 Version.");
+    _loggerInfo("    >1.5.97 Version.");
 #endif
 
     _loggerInfo("Rain Extinguishes Fires is performing startup tasks.");
@@ -136,8 +136,6 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a_
     SKSE::Init(a_skse);
     auto messaging = SKSE::GetMessagingInterface();
     messaging->RegisterListener(MessageHandler);
-
-    _loggerInfo("Rain Extinguishes Fires has initialized. Version: 5.0.0");
 
     return true;
 }

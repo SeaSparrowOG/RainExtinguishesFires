@@ -4,6 +4,11 @@ set(VERSION 5.0.0 CACHE STRING "")
 set(VR_VERSION 2)
 set(AE_VERSION 1)
 
+# ---- Options ----
+option(BUILD_SKYRIMAE_640 "Build for 1.6.640 using an older version of Commonlib" OFF)
+option(BUILD_SKYRIMVR "Build for Skyrim VR" OFF)
+option(BUILD_SKYRIMAE "Build for Skyrim AE" OFF)
+
 # ---- Cache build vars ----
 macro(set_from_environment VARIABLE)
 	if(NOT DEFINED ${VARIABLE} AND DEFINED ENV{${VARIABLE}})
@@ -192,10 +197,10 @@ target_include_directories(
 	${PROJECT_NAME}
 	PRIVATE
 	$<INSTALL_INTERFACE:${JSONCPP_INCLUDE_DIRS}>
+	${CLIB_UTIL_INCLUDE_DIRS}
 	${CMAKE_CURRENT_BINARY_DIR}/include
 	${CMAKE_CURRENT_SOURCE_DIR}/include
 	${SRELL_INCLUDE_DIRS}
-	${CLIB_UTIL_INCLUDE_DIRS}
 )
 
 target_link_libraries(
