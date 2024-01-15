@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.27)
+cmake_minimum_required(VERSION 3.21)
 set(NAME "RainExtinguishesFires" CACHE STRING "")
 set(VERSION 5.0.0 CACHE STRING "")
 set(VR_VERSION 2)
