@@ -80,12 +80,17 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 #ifdef SKYRIM_AE
 extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
     SKSE::PluginVersionData v;
-    v.PluginVersion(REL::Version(5));
-    v.PluginName("Rain Extinguishes Fires");
+    v.PluginVersion(REL::Version(1));
+    v.PluginName("Enchantment Effects Extender");
     v.AuthorName("SeaSparrow");
     v.UsesAddressLibrary();
     v.UsesUpdatedStructs();
+
+#ifdef SUPPORT_OLDER_VERSION
+    v.CompatibleVersions({ SKSE::RUNTIME_1_6_659, SKSE::RUNTIME_1_6_640, SKSE::RUNTIME_1_6_629 });
+#else
     v.CompatibleVersions({ SKSE::RUNTIME_LATEST });
+#endif
 
     return v;
     }();
@@ -93,8 +98,8 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface * a_skse, SKSE::PluginInfo * a_info)
 {
     a_info->infoVersion = SKSE::PluginInfo::kVersion;
-    a_info->name = "Rain Extinguishes Fires";
-    a_info->version = Version::MAJOR;
+    a_info->name = "Enchantment Effects Extender";
+    a_info->version = 1;
 
     const auto ver = a_skse->RuntimeVersion();
     if (ver
@@ -104,7 +109,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface * 
         > SKSE::RUNTIME_VR_1_4_15_1
 #	endif
         ) {
-        logger::critical(FMT_STRING("Unsupported runtime version {}"), ver.string());
+        _logger::critical(FMT_STRING("Unsupported runtime version {}"), ver.string());
         return false;
     }
 
@@ -114,6 +119,17 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface * 
 
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a_skse) {
     SetupLog();
+    _loggerInfo("Starting up Enchantment Effects Extender.");
+    _loggerInfo("Plugin Version:");
+#ifdef SKYRIM_AE
+#ifdef SUPPORT_OLDER_VERSION
+    _loggerInfo("    >Pre-1.6.1130 Version.");
+#else 
+    _loggerInfo("    >1.6.1130 Version.");
+#endif
+#else 
+    _loggerInfo("    >1.6.97 Version.");
+#endif
 
     _loggerInfo("Rain Extinguishes Fires is performing startup tasks.");
 

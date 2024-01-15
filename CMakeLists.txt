@@ -4,11 +4,6 @@ set(VERSION 5.0.0 CACHE STRING "")
 set(VR_VERSION 2)
 set(AE_VERSION 1)
 
-# ---- Options ----
-option(BUILD_SKYRIMAE_640 "Build for 1.6.640 using an older version of Commonlib" OFF)
-option(BUILD_SKYRIMVR "Build for Skyrim VR" OFF)
-option(BUILD_SKYRIMAE "Build for Skyrim AE" OFF)
-
 # ---- Cache build vars ----
 macro(set_from_environment VARIABLE)
 	if(NOT DEFINED ${VARIABLE} AND DEFINED ENV{${VARIABLE}})
@@ -17,49 +12,39 @@ macro(set_from_environment VARIABLE)
 endmacro()
 
 macro(find_commonlib_path)
-	if(BUILD_SKYRIMAE_640)
-		if(CommonLibName AND NOT ${CommonLibName} STREQUAL "")
-			# Check extern
-			find_path(CommonLibPath
-				include/REL/Relocation.h 
-				PATHS extern/${CommonLibName})
+	if(CommonLibName AND NOT ${CommonLibName} STREQUAL "")
+		# Check extern
+		find_path(CommonLibPath
+			include/REL/Relocation.h 
+			PATHS extern/${CommonLibName})
 
-			if(${CommonLibPath} STREQUAL "CommonLibPath-NOTFOUND")
-				# Check path
-				set_from_environment(${CommonLibName}Path)
-				set(CommonLibPath ${${CommonLibName}Path})
-			endif()
-		endif()
-	else() 
-		if(CommonLibName AND NOT ${CommonLibName} STREQUAL "")
-			# Check extern
-			find_path(CommonLibPath
-				include/REL/Relocation.h 
-				PATHS extern/${CommonLibName})
-
-			if(${CommonLibPath} STREQUAL "CommonLibPath-NOTFOUND")
-				# Check path
-				set_from_environment(${CommonLibName}Path)
-				set(CommonLibPath ${${CommonLibName}Path})
-			endif()
+		if(${CommonLibPath} STREQUAL "CommonLibPath-NOTFOUND")
+			# Check path
+			set_from_environment(${CommonLibName}Path)
+			set(CommonLibPath ${${CommonLibName}Path})
 		endif()
 	endif()
 endmacro()
 
-set_from_environment(VCPKG_ROOT)
+set_from_environment(VCPKG_ROOT) 
 
-if(BUILD_SKYRIMAE)
+if(BUILD_SKYRIMAE) 
 	add_compile_definitions(SKYRIM_AE)
 	add_compile_definitions(SKYRIM_SUPPORT_AE)
 	set(CommonLibName "CommonLibSSE")
-	if(BUILD_SKYRIMAE_640)
+
+	if(SUPPORT_PRE1130)
 		set(CommonLibName "CommonLibSSEOld")
+		add_compile_definitions(SUPPORT_OLDER_VERSION)
 	endif()
+
 	set_from_environment(SkyrimAEPath)
 	set(SkyrimPath ${SkyrimAEPath})
 	set(SkyrimVersion "Skyrim AE")
 	set(VERSION ${VERSION}.${AE_VERSION})
+
 elseif(BUILD_SKYRIMVR)
+
 	add_compile_definitions(SKYRIMVR)
 	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 	set(CommonLibName "CommonLibVR")
@@ -67,11 +52,14 @@ elseif(BUILD_SKYRIMVR)
 	set(SkyrimPath ${SkyrimVRPath})
 	set(SkyrimVersion "Skyrim VR")
 	set(VERSION ${VERSION}.${VR_VERSION})
+
 else()
+
 	set(CommonLibName "CommonLibSSEOld")
 	set_from_environment(Skyrim64Path)
 	set(SkyrimPath ${Skyrim64Path})
 	set(SkyrimVersion "Skyrim SSE")
+
 endif()
 
 find_commonlib_path()
@@ -82,7 +70,7 @@ message(
 )
 message(
 	STATUS
-	"Building 1.6.640: ${BUILD_SKYRIMAE_640}."
+	"Building for older versions: ${SUPPORT_PRE1130}."
 )
 
 if(DEFINED VCPKG_ROOT)
@@ -204,10 +192,10 @@ target_include_directories(
 	${PROJECT_NAME}
 	PRIVATE
 	$<INSTALL_INTERFACE:${JSONCPP_INCLUDE_DIRS}>
-	${CLIB_UTIL_INCLUDE_DIRS}
 	${CMAKE_CURRENT_BINARY_DIR}/include
 	${CMAKE_CURRENT_SOURCE_DIR}/include
 	${SRELL_INCLUDE_DIRS}
+	${CLIB_UTIL_INCLUDE_DIRS}
 )
 
 target_link_libraries(
@@ -251,7 +239,15 @@ endif()
 
 # ---- Post build ----
 if(DEFINED ENV{SKYRIM_MODS_FOLDER} AND IS_DIRECTORY "$ENV{SKYRIM_MODS_FOLDER}")
-    set(OUTPUT_FOLDER "$ENV{SKYRIM_MODS_FOLDER}/${PROJECT_NAME}")
+	if(BUILD_SKYRIMAE)
+		if (SUPPORT_PRE1130)
+			set(OUTPUT_FOLDER "$ENV{SKYRIM_MODS_FOLDER}/${PROJECT_NAME} - 640")
+		else()
+			set(OUTPUT_FOLDER "$ENV{SKYRIM_MODS_FOLDER}/${PROJECT_NAME} - 1130")
+		endif()
+	else() 
+		set(OUTPUT_FOLDER "$ENV{SKYRIM_MODS_FOLDER}/${PROJECT_NAME} - 97")
+	endif()
 endif()
 
 if(DEFINED OUTPUT_FOLDER)
@@ -261,17 +257,9 @@ if(DEFINED OUTPUT_FOLDER)
         TARGET "${PROJECT_NAME}"
         POST_BUILD
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:${PROJECT_NAME}>" "${DLL_FOLDER}/$<TARGET_FILE_NAME:${PROJECT_NAME}>"
+		COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_PDB_FILE:${PROJECT_NAME}>" "${DLL_FOLDER}/$<TARGET_PDB_FILE_NAME:${PROJECT_NAME}>"
         VERBATIM
     )
-
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        add_custom_command(
-            TARGET "${PROJECT_NAME}"
-            POST_BUILD
-            COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_PDB_FILE:${PROJECT_NAME}>" "${DLL_FOLDER}/$<TARGET_PDB_FILE_NAME:${PROJECT_NAME}>"
-            VERBATIM
-        )
-    endif()
 endif()
 
 # https://gitlab.kitware.com/cmake/cmake/-/issues/24922#note_1371990

@@ -53,7 +53,8 @@
       "hidden": true,
       "binaryDir": "${sourceDir}/buildae",
       "cacheVariables": {
-        "BUILD_SKYRIMAE": true
+        "BUILD_SKYRIMAE": true,
+        "SUPPORT_PRE1130": false
       }
     },
     {
@@ -61,8 +62,7 @@
       "hidden": true,
       "binaryDir": "${sourceDir}/buildae-old",
       "cacheVariables": {
-        "BUILD_SKYRIMAE": true,
-        "BUILD_SKYRIMAE_640": true
+        "BUILD_SKYRIMAE": true
       }
     },
     {
