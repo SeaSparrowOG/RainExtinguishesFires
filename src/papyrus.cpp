@@ -22,7 +22,7 @@ namespace Papyrus {
 				if (a_ref.Is3DLoaded()) {
 					auto* baseBound = a_ref.GetBaseObject();
 					if (!baseBound) RE::BSContainer::ForEachResult::kContinue;
-					if (baseBound->Is(a_type)) RE::BSContainer::ForEachResult::kContinue;
+					if (!baseBound->Is(a_type)) RE::BSContainer::ForEachResult::kContinue;
 					if (a_ref.data.location.GetDistance(mainLocation) <= lastDistance) {
 						found = true;
 						lastDistance = a_ref.data.location.GetDistance(mainLocation);
@@ -139,6 +139,18 @@ namespace Papyrus {
 				this->frozenFiresRegister.erase(a_fire);
 				return;
 			}
+		}
+
+		auto* settingsSingleton = Settings::Settings::GetSingleton();
+
+		if (settingsSingleton->SearchForLights()) {
+			auto* foundLight = GetNearestReferenceOfType(a_fire, 200.0f, RE::FormType::Light);
+			if (foundLight) additionalExtinguishes.push_back(foundLight);
+		}
+
+		if (settingsSingleton->SearchForSmoke()) {
+			auto* foundSmoke = GetNearestReferenceOfType(a_fire, 200.0f, RE::FormType::MovableStatic);
+			if (foundSmoke) additionalExtinguishes.push_back(foundSmoke);
 		}
 
 		if (a_dyndolodFire) {
