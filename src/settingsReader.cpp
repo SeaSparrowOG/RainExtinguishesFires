@@ -68,27 +68,17 @@ namespace Settings {
 					offFireData.offVersion = offForm;
 					if (!litForm || !offForm) continue;
 
-					if (dyndoldFound) {
-						std::string baseEDID = clib_util::editorID::get_editorID(litForm);
-						if (!baseEDID.empty()) {
-							std::string dyndolodEDID = baseEDID + "_DynDOLOD_BASE";
-							auto* foundForm = RE::TESForm::LookupByEditorID(dyndolodEDID);
-
-							if (foundForm) {
-								_loggerInfo("        >Created additional swap for {}.", dyndolodEDID);
-								offFireData.dyndolodFire = true;
-								fireRegistry->RegisterPair(foundForm, offFireData);
-								fireRegistry->RegisterReversePair(offForm, foundForm);
-							}
-						}
-					}
+					_loggerInfo("    [Swap]");
+					_loggerInfo("    >Source: {}.", baseSource);
 
 					std::string baseEDID = clib_util::editorID::get_editorID(litForm);
 					if (baseEDID.empty()) {
-						_loggerInfo("    >Created entry for {} -> {}.", baseFormIDstr, baseSource);
+						_loggerInfo("    >Base Fire: {}.", baseFormIDstr);
+						_loggerInfo("    >Off Fire: {} -> {}.", offSource, clib_util::editorID::get_editorID(offForm));
 					}
 					else {
-						_loggerInfo("    >Created entry for {} -> {}.", baseEDID, baseSource);
+						_loggerInfo("    >Base Fire: {}.", baseEDID);
+						_loggerInfo("    >Off Fire: {} -> {}.", offSource, offFormIDstr);
 					}
 
 					if (!smokeData.empty()) {
@@ -103,9 +93,28 @@ namespace Settings {
 
 							RE::TESForm* smokeForm = RE::TESDataHandler::GetSingleton()->LookupForm(ID, source);
 							offFireData.validSmokes.push_back(smokeForm);
+
+							std::string smokeEDID = clib_util::editorID::get_editorID(smokeForm);
+							if (smokeEDID.empty()) {
+								_loggerInfo("    >Related smoke object: {} -> {}.", source, IDstr);
+							}
+							else {
+								_loggerInfo("    >Related smoke object: {} -> {}.", source, smokeEDID);
+							}
 						}
 					}
 
+					if (dyndoldFound) {
+						if (!baseEDID.empty()) {
+							std::string dyndolodEDID = baseEDID + "_DynDOLOD_BASE";
+							auto* foundForm = RE::TESForm::LookupByEditorID(dyndolodEDID);
+
+							if (foundForm) {
+								_loggerInfo("    >Found DynDOLOD match: {}.", dyndolodEDID);
+								offFireData.dyndolodFire = true;
+							}
+						}
+					}
 					fireRegistry->RegisterPair(litForm, offFireData);
 					fireRegistry->RegisterReversePair(offForm, litForm);
 				}
