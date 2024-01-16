@@ -139,8 +139,9 @@ namespace Papyrus {
 
 		auto* referenceExtraList = &a_fire->extraList;
 		bool hasEnableChildren = referenceExtraList ? referenceExtraList->HasType(RE::ExtraDataType::kEnableStateChildren) : false;
+		bool hasEnableParents = referenceExtraList ? referenceExtraList->HasType(RE::ExtraDataType::kEnableStateParent) : false;
 
-		if (hasEnableChildren && !a_dyndolodFire) {
+		if (hasEnableParents || (hasEnableChildren && !a_dyndolodFire)) {
 			this->frozenFiresRegister.erase(a_fire);
 			return;
 		}
