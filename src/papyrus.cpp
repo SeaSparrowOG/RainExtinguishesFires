@@ -12,23 +12,22 @@ namespace Papyrus {
 	RE::TESObjectREFR* GetNearestReferenceOfType(RE::TESObjectREFR* a_center, float a_radius, RE::FormType a_type) {
 		RE::TESObjectREFR* response = nullptr;
 		bool found = false;
-		auto mainLocation = a_center->data.location;
 		float lastDistance = a_radius;
+		auto refLocation = a_center->GetPosition();
 
 		if (const auto TES = RE::TES::GetSingleton(); TES) {
-			auto centerLocation = a_center->data.location;
-
 			TES->ForEachReferenceInRange(a_center, a_radius, [&](RE::TESObjectREFR& a_ref) {
-				if (a_ref.Is3DLoaded()) {
-					auto* baseBound = a_ref.GetBaseObject();
-					if (!baseBound) RE::BSContainer::ForEachResult::kContinue;
-					if (!baseBound->Is(a_type)) RE::BSContainer::ForEachResult::kContinue;
-					if (a_ref.data.location.GetDistance(mainLocation) <= lastDistance) {
-						found = true;
-						lastDistance = a_ref.data.location.GetDistance(mainLocation);
-						response = &a_ref;
-					}
-				}
+				const auto baseBound = a_ref.GetBaseObject();
+				if (!a_ref.Is3DLoaded()) return RE::BSContainer::ForEachResult::kContinue;
+				if (!baseBound) return RE::BSContainer::ForEachResult::kContinue;
+				if (!baseBound->Is(a_type)) return RE::BSContainer::ForEachResult::kContinue;
+
+				auto lightLocation = a_ref.GetPosition();
+				float currentDistance = lightLocation.GetDistance(refLocation);
+				if (currentDistance > lastDistance) return RE::BSContainer::ForEachResult::kContinue;
+
+				found = true;
+				response = &a_ref;
 				return RE::BSContainer::ForEachResult::kContinue;
 				});
 		}
@@ -144,12 +143,15 @@ namespace Papyrus {
 		auto* settingsSingleton = Settings::Settings::GetSingleton();
 
 		if (settingsSingleton->SearchForLights()) {
-			auto* foundLight = GetNearestReferenceOfType(a_fire, 200.0f, RE::FormType::Light);
-			if (foundLight) additionalExtinguishes.push_back(foundLight);
+			auto foundLight = GetNearestReferenceOfType(a_fire, 300.0f, RE::FormType::Light);
+			if (foundLight) {
+				_loggerInfo("Found light {}.",clib_util::editorID::get_editorID(foundLight->GetBaseObject()));
+				additionalExtinguishes.push_back(foundLight);
+			}
 		}
 
 		if (settingsSingleton->SearchForSmoke()) {
-			auto* foundSmoke = GetNearestReferenceOfType(a_fire, 200.0f, RE::FormType::MovableStatic);
+			auto foundSmoke = GetNearestReferenceOfType(a_fire, 300.0f, RE::FormType::MovableStatic);
 			if (foundSmoke) additionalExtinguishes.push_back(foundSmoke);
 		}
 
