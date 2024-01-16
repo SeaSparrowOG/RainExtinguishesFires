@@ -48,50 +48,66 @@ namespace Settings {
 			Json::Value   JSONFile;
 			JSONReader.parse(rawJSON, JSONFile);
 			Json::Value fireData = JSONFile["Fires"];
+			Json::Value smokeData = JSONFile["Smokes"];
 
-			if (fireData.empty()) return false; 
+			if (!fireData.empty()) {
+				//Assuming fireData exists and is an array of Objects.
+				for (auto& fire : fireData) {
+					FireRegistry::offFire offFireData = FireRegistry::offFire();
+					std::string baseSource = fire["Source"].asString();
+					std::string offSource = fire["OffSource"].asString();
+					std::string baseFormIDstr = fire["SourceID"].asString();
+					std::string offFormIDstr = fire["OffSourceID"].asString();
 
-			//Assuming fireData exists and is an array of Objects.
-			for (auto& fire : fireData) {
-				FireRegistry::offFire offFireData = FireRegistry::offFire();
-				std::string baseSource = fire["Source"].asString();
-				std::string offSource = fire["OffSource"].asString();
-				std::string baseFormIDstr = fire["SourceID"].asString();
-				std::string offFormIDstr = fire["OffSourceID"].asString();
+					RE::FormID baseFormID = StringToFormID(baseFormIDstr);
+					RE::FormID offFormID = StringToFormID(offFormIDstr);
 
-				RE::FormID baseFormID = StringToFormID(baseFormIDstr);
-				RE::FormID offFormID = StringToFormID(offFormIDstr);
+					RE::TESForm* litForm = RE::TESDataHandler::GetSingleton()->LookupForm(baseFormID, baseSource);
+					RE::TESForm* offForm = RE::TESDataHandler::GetSingleton()->LookupForm(offFormID, offSource);
 
-				RE::TESForm* litForm = RE::TESDataHandler::GetSingleton()->LookupForm(baseFormID, baseSource);
-				RE::TESForm* offForm = RE::TESDataHandler::GetSingleton()->LookupForm(offFormID, offSource);
+					offFireData.offVersion = offForm;
+					if (!litForm || !offForm) continue;
 
-				offFireData.offVersion = offForm;
-				if (!litForm || !offForm) continue;
+					if (dyndoldFound) {
+						std::string baseEDID = clib_util::editorID::get_editorID(litForm);
+						if (!baseEDID.empty()) {
+							std::string dyndolodEDID = baseEDID + "_DynDOLOD_BASE";
+							auto* foundForm = RE::TESForm::LookupByEditorID(dyndolodEDID);
 
-				if (dyndoldFound) {
-					std::string baseEDID = clib_util::editorID::get_editorID(litForm);
-					if (!baseEDID.empty()) {
-						std::string dyndolodEDID = baseEDID + "_DynDOLOD_BASE";
-						auto* foundForm = RE::TESForm::LookupByEditorID(dyndolodEDID);
-
-						if (foundForm) {
-							_loggerInfo("        >Created additional swap for {}.", dyndolodEDID);
-							offFireData.dyndolodFire = true;
-							fireRegistry->RegisterPair(foundForm, offFireData);
-							fireRegistry->RegisterReversePair(offForm, foundForm);
+							if (foundForm) {
+								_loggerInfo("        >Created additional swap for {}.", dyndolodEDID);
+								offFireData.dyndolodFire = true;
+								fireRegistry->RegisterPair(foundForm, offFireData);
+								fireRegistry->RegisterReversePair(offForm, foundForm);
+							}
 						}
 					}
-				}
 
-				fireRegistry->RegisterPair(litForm, offFireData);
-				fireRegistry->RegisterReversePair(offForm, litForm);
+					std::string baseEDID = clib_util::editorID::get_editorID(litForm);
+					if (baseEDID.empty()) {
+						_loggerInfo("    >Created entry for {} -> {}.", baseFormIDstr, baseSource);
+					}
+					else {
+						_loggerInfo("    >Created entry for {} -> {}.", baseEDID, baseSource);
+					}
 
-				std::string baseEDID = clib_util::editorID::get_editorID(litForm);
-				if (baseEDID.empty()) {
-					_loggerInfo("    >Created entry for {} -> {}.", baseFormIDstr, baseSource);
-				}
-				else {
-					_loggerInfo("    >Created entry for {} -> {}.", baseEDID, baseSource);
+					if (!smokeData.empty()) {
+						Json::Value sourceVal = smokeData["Source"];
+						if (!sourceVal) continue;
+
+						std::string source = smokeData["Source"].asString();
+						for (auto object : smokeData["IDs"]) {
+							std::string IDstr = object.asString();
+							RE::FormID ID = StringToFormID(IDstr);
+							if (!ID || ID == NULL) continue;
+
+							RE::TESForm* smokeForm = RE::TESDataHandler::GetSingleton()->LookupForm(ID, source);
+							offFireData.validSmokes.push_back(smokeForm);
+						}
+					}
+
+					fireRegistry->RegisterPair(litForm, offFireData);
+					fireRegistry->RegisterReversePair(offForm, litForm);
 				}
 			}
 		}

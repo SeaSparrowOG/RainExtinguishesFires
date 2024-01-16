@@ -3,13 +3,22 @@
 #include "settingsReader.h"
 
 namespace Papyrus {
+	bool IsFormInVector(RE::TESForm* a_form, std::vector<RE::TESForm*> a_vec) {
+		if (!a_vec.empty()) {
+			for (auto* form : a_vec) {
+				if (form == a_form) return true;
+			}
+		}
+		return false;
+	}
+
 	/**
 	* Returns the closest reference with the provided type.
 	* @param a_center The reference from which to search.
 	* @param a_radius The radius within which to search.
 	* @param a_type The type of reference to check. 31 is lights, 36 Moveable statics.
 	*/
-	RE::TESObjectREFR* GetNearestReferenceOfType(RE::TESObjectREFR* a_center, float a_radius, RE::FormType a_type) {
+	RE::TESObjectREFR* GetNearestReferenceOfType(RE::TESObjectREFR* a_center, float a_radius, RE::FormType a_type, std::vector<RE::TESForm*> a_matchAgainst) {
 		RE::TESObjectREFR* response = nullptr;
 		bool found = false;
 		float lastDistance = a_radius;
@@ -20,7 +29,10 @@ namespace Papyrus {
 				const auto baseBound = a_ref.GetBaseObject();
 				if (!a_ref.Is3DLoaded()) return RE::BSContainer::ForEachResult::kContinue;
 				if (!baseBound) return RE::BSContainer::ForEachResult::kContinue;
+				auto* baseForm = baseBound->As<RE::TESForm>();
+				if (!baseForm) return RE::BSContainer::ForEachResult::kContinue;
 				if (!baseBound->Is(a_type)) return RE::BSContainer::ForEachResult::kContinue;
+				if (!a_matchAgainst.empty() && !IsFormInVector(baseForm, a_matchAgainst)) return RE::BSContainer::ForEachResult::kContinue;
 
 				auto lightLocation = a_ref.GetPosition();
 				float currentDistance = lightLocation.GetDistance(refLocation);
@@ -141,9 +153,10 @@ namespace Papyrus {
 		}
 
 		auto* settingsSingleton = Settings::Settings::GetSingleton();
+		std::vector<RE::TESForm*> validSmoke = std::vector<RE::TESForm*>();
 
 		if (settingsSingleton->SearchForLights()) {
-			auto foundLight = GetNearestReferenceOfType(a_fire, 300.0f, RE::FormType::Light);
+			auto foundLight = GetNearestReferenceOfType(a_fire, 300.0f, RE::FormType::Light, validSmoke);
 			if (foundLight) {
 				_loggerInfo("Found light {}.",clib_util::editorID::get_editorID(foundLight->GetBaseObject()));
 				additionalExtinguishes.push_back(foundLight);
@@ -151,7 +164,8 @@ namespace Papyrus {
 		}
 
 		if (settingsSingleton->SearchForSmoke()) {
-			auto foundSmoke = GetNearestReferenceOfType(a_fire, 300.0f, RE::FormType::MovableStatic);
+			validSmoke = FireRegistry::FireRegistry::GetSingleton()->GetMatch(a_fire->GetBaseObject()->As<RE::TESForm>()).validSmokes;
+			auto foundSmoke = GetNearestReferenceOfType(a_fire, 300.0f, RE::FormType::MovableStatic, validSmoke);
 			if (foundSmoke) additionalExtinguishes.push_back(foundSmoke);
 		}
 

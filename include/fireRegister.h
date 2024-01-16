@@ -3,11 +3,13 @@
 namespace FireRegistry {
 	//Might seem redundant. More information will be made available here.
 	struct offFire {
-		RE::TESForm*      offVersion;
-		bool              dyndolodFire;
+		bool                      dyndolodFire;
+		RE::TESForm*              offVersion;
+		std::vector<RE::TESForm*> validSmokes;
 
 		offFire() {
 			this->offVersion = nullptr;
+			this->validSmokes = std::vector<RE::TESForm*>();
 			this->dyndolodFire = false;
 		}
 	};
