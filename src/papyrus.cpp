@@ -74,6 +74,44 @@ namespace Papyrus {
 		return nullptr;
 	}
 
+	RE::NiPoint3 angles2dir(const RE::NiPoint3& angles) {
+		RE::NiPoint3 ans;
+
+		float sinx = sinf(angles.x);
+		float cosx = cosf(angles.x);
+		float sinz = sinf(angles.z);
+		float cosz = cosf(angles.z);
+
+		ans.x = cosx * sinz;
+		ans.y = cosx * cosz;
+		ans.z = -sinx;
+
+		return ans;
+	}
+
+	RE::NiPoint3 rotate(float r, const RE::NiPoint3& angles) { return angles2dir(angles) * r; }
+
+	bool IsOccluded(RE::TESObjectREFR* a_fire) {
+		if (!Settings::Settings::GetSingleton()->CheckForOcclusion()) return false;
+
+		auto* fireCell = a_fire->GetParentCell();
+		const auto bhkWorld = fireCell ? fireCell->GetbhkWorld() : nullptr;
+		if (!bhkWorld) return false;
+
+		auto havokWorldScale = RE::bhkWorld::GetWorldScale();
+		RE::bhkPickData pick_data;
+		RE::NiPoint3 ray_start, ray_end;
+
+		ray_start = a_fire->data.location + rotate(150.0f, a_fire->data.angle);
+		ray_end = ray_start + rotate(450.0f, a_fire->data.angle);
+		pick_data.rayInput.from = ray_start * havokWorldScale;
+		pick_data.rayInput.to = ray_end * havokWorldScale;
+		pick_data.rayInput.filterInfo = SKSE::stl::to_underlying(RE::COL_LAYER::kStatic); //RE::bhkCollisionFilter::GetSingleton()->GetNewSystemGroup() << 16 | SKSE::stl::to_underlying(RE::COL_LAYER::kStatic);
+
+		if (bhkWorld->PickObject(pick_data); pick_data.rayOutput.HasHit()) return true;
+		return false;
+	}
+
 	bool Papyrus::IsRaining() { return this->isRaining; }
 
 	void Papyrus::SendWeatherChangeEvent(RE::TESWeather* a_weather) {
@@ -130,7 +168,7 @@ namespace Papyrus {
 		this->movedToExterior.QueueEvent(a_movedToExterior);
 	}
 
-	void Papyrus::SendExtinguishEvent(RE::TESObjectREFR* a_fire, RE::TESForm* a_offVersion, bool a_dyndolodFire) {
+	void Papyrus::SendExtinguishEvent(RE::TESObjectREFR* a_fire, RE::TESForm* a_offVersion, bool a_dyndolodFire, bool a_force) {
 		if (this->frozenFiresRegister.find(a_fire) != this->frozenFiresRegister.end()) {
 			return;
 		}
@@ -155,6 +193,13 @@ namespace Papyrus {
 
 		auto* settingsSingleton = Settings::Settings::GetSingleton();
 		std::vector<RE::TESForm*> validSmoke = std::vector<RE::TESForm*>();
+
+		if (!a_force && settingsSingleton->CheckForOcclusion()) {
+			if (IsOccluded(a_fire)) {
+				this->frozenFiresRegister.erase(a_fire);
+				return;
+			}
+		}
 
 		if (settingsSingleton->SearchForLights()) {
 			auto foundLight = GetNearestReferenceOfType(a_fire, 300.0f, RE::FormType::Light, validSmoke);

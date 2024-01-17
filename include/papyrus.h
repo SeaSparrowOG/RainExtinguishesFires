@@ -23,7 +23,7 @@ namespace Papyrus {
 		void RemoveFireFromRegistry(RE::TESObjectREFR* a_fire);
 		void ResetFrozenMaps();
 		void SendWeatherChangeEvent(RE::TESWeather* a_weather);
-		void SendExtinguishEvent(RE::TESObjectREFR* a_fire, RE::TESForm* a_offVersion, bool a_dyndolodFire);
+		void SendExtinguishEvent(RE::TESObjectREFR* a_fire, RE::TESForm* a_offVersion, bool a_dyndolodFire, bool a_force = false);
 		void SendRelightEvent(RE::TESObjectREFR* a_fire, bool a_bForce = false);
 		void SendPlayerChangedInteriorExterior(bool a_movedToExterior);
 		void SetIsRaining(bool a_isRaining);

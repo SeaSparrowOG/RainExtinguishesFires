@@ -28,7 +28,7 @@ namespace Settings {
 		this->searchForSmoke = ini.GetBoolValue("", "bFindNearbySmoke");
 		*/
 
-		this->checkForOcclusion = false;
+		this->checkForOcclusion = true;
 		this->searchForLights = true;
 		this->searchForSmoke = true;
 

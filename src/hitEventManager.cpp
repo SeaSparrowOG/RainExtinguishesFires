@@ -96,7 +96,7 @@ namespace HitManager {
 			Papyrus::Papyrus::GetSingleton()->SendRelightEvent(hitRef, true);
 		}
 		else {
-			Papyrus::Papyrus::GetSingleton()->SendExtinguishEvent(hitRef, offVersion.offVersion, offVersion.dyndolodFire);
+			Papyrus::Papyrus::GetSingleton()->SendExtinguishEvent(hitRef, offVersion.offVersion, offVersion.dyndolodFire, true);
 		}
 		return RE::BSEventNotifyControl::kContinue;
 	}
