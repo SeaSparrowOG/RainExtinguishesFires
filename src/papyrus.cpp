@@ -27,7 +27,6 @@ namespace Papyrus {
 		if (const auto TES = RE::TES::GetSingleton(); TES) {
 			TES->ForEachReferenceInRange(a_center, a_radius, [&](RE::TESObjectREFR& a_ref) {
 				const auto baseBound = a_ref.GetBaseObject();
-				if (!a_ref.Is3DLoaded()) return RE::BSContainer::ForEachResult::kContinue;
 				if (!baseBound) return RE::BSContainer::ForEachResult::kContinue;
 				auto* baseForm = baseBound->As<RE::TESForm>();
 				if (!baseForm) return RE::BSContainer::ForEachResult::kContinue;
@@ -57,14 +56,12 @@ namespace Papyrus {
 			auto centerLocation = a_center->data.location;
 
 			TES->ForEachReferenceInRange(a_center, a_radius, [&](RE::TESObjectREFR& a_ref) {
-				if (a_ref.Is3DLoaded()) {
-					auto* baseBound = a_ref.GetBaseObject();
-					if (!baseBound) return RE::BSContainer::ForEachResult::kContinue;
+				auto* baseBound = a_ref.GetBaseObject();
+				if (!baseBound) return RE::BSContainer::ForEachResult::kContinue;
 
-					if (clib_util::editorID::get_editorID(baseBound->As<RE::TESForm>()).contains(a_name)) {
-						response = &a_ref;
-						found = true;
-					}
+				if (clib_util::editorID::get_editorID(baseBound->As<RE::TESForm>()).contains(a_name)) {
+					response = &a_ref;
+					found = true;
 				}
 				return RE::BSContainer::ForEachResult::kContinue;
 				});
