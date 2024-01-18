@@ -12,13 +12,6 @@
       "cacheVariables": {
         "CMAKE_CONFIGURATION_TYPES": "Debug;Release",
         "CMAKE_CXX_FLAGS": "/EHsc /MP /W4 /external:anglebrackets /external:W0 $penv{CXXFLAGS}"
-      },
-      "errors": {
-        "deprecated": true
-      },
-      "warnings": {
-        "deprecated": true,
-        "dev": true
       }
     },
     {
@@ -46,12 +39,12 @@
     {
       "name": "se",
       "hidden": true,
-      "binaryDir": "${sourceDir}/build"
+      "binaryDir": "${sourceDir}/build-1597"
     },
     {
       "name": "ae",
       "hidden": true,
-      "binaryDir": "${sourceDir}/buildae",
+      "binaryDir": "${sourceDir}/build-161170",
       "cacheVariables": {
         "BUILD_SKYRIMAE": true,
         "SUPPORT_PRE1130": false
@@ -60,7 +53,7 @@
     {
       "name": "ae-old",
       "hidden": true,
-      "binaryDir": "${sourceDir}/buildae-old",
+      "binaryDir": "${sourceDir}/buildae-16640",
       "cacheVariables": {
         "BUILD_SKYRIMAE": true
       }
@@ -68,7 +61,7 @@
     {
       "name": "vr",
       "hidden": true,
-      "binaryDir": "${sourceDir}/buildvr",
+      "binaryDir": "${sourceDir}/build-vr",
       "cacheVariables": {
         "BUILD_SKYRIMVR": true
       }
@@ -116,24 +109,44 @@
   ],
   "buildPresets": [
     {
-      "name": "vs2022-windows-vcpkg-ae",
+      "name": "Release - 1.6.1170",
       "configurePreset": "vs2022-windows-vcpkg-ae",
       "configuration": "Release"
     },
     {
-      "name": "vs2022-windows-vcpkg-se",
+      "name": "Release - 1.5.97",
       "configurePreset": "vs2022-windows-vcpkg-se",
       "configuration": "Release"
     },
     {
-      "name": "vs2022-windows-vcpkg-vr",
+      "name": "Release - VR",
       "configurePreset": "vs2022-windows-vcpkg-vr",
       "configuration": "Release"
     },
     {
-      "name": "vs2022-windows-vcpkg-ae-old",
+      "name": "Release - 1.6.640",
       "configurePreset": "vs2022-windows-vcpkg-ae-old",
       "configuration": "Release"
+    },
+    {
+      "name": "Debug - 1.6.1170",
+      "configurePreset": "vs2022-windows-vcpkg-ae",
+      "configuration": "Debug"
+    },
+    {
+      "name": "Debug - 1.5.97",
+      "configurePreset": "vs2022-windows-vcpkg-se",
+      "configuration": "Debug"
+    },
+    {
+      "name": "Debug - VR",
+      "configurePreset": "vs2022-windows-vcpkg-vr",
+      "configuration": "Debug"
+    },
+    {
+      "name": "Debug - 1.6.640",
+      "configurePreset": "vs2022-windows-vcpkg-ae-old",
+      "configuration": "Debug"
     }
   ]
 }

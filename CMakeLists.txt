@@ -21,7 +21,7 @@ macro(find_commonlib_path)
 		# Check extern
 		find_path(CommonLibPath
 			include/REL/Relocation.h 
-			PATHS extern/${CommonLibName})
+			PATHS extern/${CommonLibName}Latest)
 
 		if(${CommonLibPath} STREQUAL "CommonLibPath-NOTFOUND")
 			# Check path
@@ -37,12 +37,6 @@ if(BUILD_SKYRIMAE)
 	add_compile_definitions(SKYRIM_AE)
 	add_compile_definitions(SKYRIM_SUPPORT_AE)
 	set(CommonLibName "CommonLibSSE")
-
-	if(SUPPORT_PRE1130)
-		set(CommonLibName "CommonLibSSEOld")
-		add_compile_definitions(SUPPORT_OLDER_VERSION)
-	endif()
-
 	set_from_environment(SkyrimAEPath)
 	set(SkyrimPath ${SkyrimAEPath})
 	set(SkyrimVersion "Skyrim AE")
@@ -92,6 +86,7 @@ set(Boost_USE_STATIC_RUNTIME OFF CACHE BOOL "")
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STRING "")
 
 # ---- Project ----
+
 project(
 	${NAME}
 	VERSION ${VERSION}
@@ -111,25 +106,27 @@ configure_file(
 )
 
 # ---- Include guards ----
+
 if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
 	message(
 		FATAL_ERROR
-		"In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there."
+			"In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there."
 	)
 endif()
 
 # ---- Globals ----
+
 add_compile_definitions(
 	SKSE_SUPPORT_XBYAK
 )
 
-if(MSVC)
-	if(NOT ${CMAKE_GENERATOR} STREQUAL "Ninja")
+if (MSVC)
+	if (NOT ${CMAKE_GENERATOR} STREQUAL "Ninja")
 		add_compile_options(
-			/MP # Build with Multiple Processes
+			/MP	# Build with Multiple Processes
 		)
-	endif()
-endif()
+	endif ()
+endif ()
 
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
@@ -137,12 +134,13 @@ set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
 set(Boost_USE_STATIC_LIBS ON)
 
 # ---- Dependencies ----
-if(DEFINED CommonLibPath AND NOT ${CommonLibPath} STREQUAL "" AND IS_DIRECTORY ${CommonLibPath})
+
+if (DEFINED CommonLibPath AND NOT ${CommonLibPath} STREQUAL "" AND IS_DIRECTORY ${CommonLibPath})
 	add_subdirectory(${CommonLibPath} ${CommonLibName})
-else()
+else ()
 	message(
 		FATAL_ERROR
-		"Variable ${CommonLibName}Path is not set or in extern/."
+		"Variable ${CommonLibName}Path is not set."
 	)
 endif()
 
@@ -152,26 +150,26 @@ find_package(frozen CONFIG REQUIRED)
 find_package(jsoncpp CONFIG REQUIRED)
 
 # ---- Add source files ----
-include(GNUInstallDirs)
 include(cmake/headerlist.cmake)
 include(cmake/sourcelist.cmake)
 
 source_group(
-	TREEtarget
-	${CMAKE_CURRENT_SOURCE_DIR}
+	TREE
+		${CMAKE_CURRENT_SOURCE_DIR}
 	FILES
-	${headers}
-	${sources}
+		${headers}
+		${sources}
 )
 
 source_group(
 	TREE
-	${CMAKE_CURRENT_BINARY_DIR}
+		${CMAKE_CURRENT_BINARY_DIR}
 	FILES
-	${CMAKE_CURRENT_BINARY_DIR}/include/Version.h
+		${CMAKE_CURRENT_BINARY_DIR}/include/Version.h
 )
 
 # ---- Create DLL ----
+
 add_library(
 	${PROJECT_NAME}
 	SHARED
@@ -184,63 +182,62 @@ add_library(
 target_compile_features(
 	${PROJECT_NAME}
 	PRIVATE
-	cxx_std_23
+		cxx_std_23
 )
 
 target_compile_definitions(
 	${PROJECT_NAME}
 	PRIVATE
-	_UNICODE
+		_UNICODE
 )
 
 target_include_directories(
 	${PROJECT_NAME}
 	PRIVATE
-	$<INSTALL_INTERFACE:${JSONCPP_INCLUDE_DIRS}>
-	${CLIB_UTIL_INCLUDE_DIRS}
-	${CMAKE_CURRENT_BINARY_DIR}/include
-	${CMAKE_CURRENT_SOURCE_DIR}/include
-	${SRELL_INCLUDE_DIRS}
+		${CMAKE_CURRENT_BINARY_DIR}/include
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+		${SRELL_INCLUDE_DIRS}
+		${CLIB_UTIL_INCLUDE_DIRS}
+		${JSONCPP_INCLUDE_DIRS}
 )
 
 target_link_libraries(
 	${PROJECT_NAME}
 	PRIVATE
-	CommonLibSSE::CommonLibSSE
-	frozen::frozen
-	JsonCpp::JsonCpp
+		${CommonLibName}::${CommonLibName}
+		JsonCpp::JsonCpp
 )
 
 target_precompile_headers(
 	${PROJECT_NAME}
 	PRIVATE
-	include/PCH.h
+		include/PCH.h
 )
 
-if(MSVC)
+if (MSVC)
 	target_compile_options(
 		${PROJECT_NAME}
 		PRIVATE
-		/sdl # Enable Additional Security Checks
-		/utf-8 # Set Source and Executable character sets to UTF-8
-		/Zi # Debug Information Format
+			/sdl             # Enable Additional Security Checks
+			/utf-8           # Set Source and Executable character sets to UTF-8
+			/Zi              # Debug Information Format
 
-		/permissive- # Standards conformance
-		/Zc:preprocessor # Enable preprocessor conformance mode
+			/permissive-     # Standards conformance
+			/Zc:preprocessor # Enable preprocessor conformance mode
 
-		/wd4200 # nonstandard extension used : zero-sized array in struct/union
+			/wd4200          # nonstandard extension used : zero-sized array in struct/union
 
-		"$<$<CONFIG:DEBUG>:>"
-		"$<$<CONFIG:RELEASE>:/Zc:inline;/JMC-;/Ob3>"
+			"$<$<CONFIG:DEBUG>:>"
+			"$<$<CONFIG:RELEASE>:/Zc:inline;/JMC-;/Ob3>"
 	)
 
 	target_link_options(
 		${PROJECT_NAME}
 		PRIVATE
-		"$<$<CONFIG:DEBUG>:/INCREMENTAL;/OPT:NOREF;/OPT:NOICF>"
-		"$<$<CONFIG:RELEASE>:/INCREMENTAL:NO;/OPT:REF;/OPT:ICF;/DEBUG:FULL>"
+			"$<$<CONFIG:DEBUG>:/INCREMENTAL;/OPT:NOREF;/OPT:NOICF>"
+			"$<$<CONFIG:RELEASE>:/INCREMENTAL:NO;/OPT:REF;/OPT:ICF;/DEBUG:FULL>"
 	)
-endif()
+endif ()
 
 # ---- Post build ----
 if(DEFINED ENV{SKYRIM_MODS_FOLDER} AND IS_DIRECTORY "$ENV{SKYRIM_MODS_FOLDER}")
