@@ -1,6 +1,5 @@
 #include "papyrus.h"
 #include "fireRegister.h"
-#include "settingsReader.h"
 
 namespace Papyrus {
 	bool IsFormInVector(RE::TESForm* a_form, std::vector<RE::TESForm*> a_vec) {
@@ -25,20 +24,20 @@ namespace Papyrus {
 		auto refLocation = a_center->GetPosition();
 
 		if (const auto TES = RE::TES::GetSingleton(); TES) {
-			TES->ForEachReferenceInRange(a_center, a_radius, [&](RE::TESObjectREFR& a_ref) {
-				const auto baseBound = a_ref.GetBaseObject();
+			TES->ForEachReferenceInRange(a_center, a_radius, [&](RE::TESObjectREFR* a_ref) {
+				const auto baseBound = a_ref->GetBaseObject();
 				if (!baseBound) return RE::BSContainer::ForEachResult::kContinue;
 				auto* baseForm = baseBound->As<RE::TESForm>();
 				if (!baseForm) return RE::BSContainer::ForEachResult::kContinue;
 				if (!baseBound->Is(a_type)) return RE::BSContainer::ForEachResult::kContinue;
 				if (!a_matchAgainst.empty() && !IsFormInVector(baseForm, a_matchAgainst)) return RE::BSContainer::ForEachResult::kContinue;
 
-				auto lightLocation = a_ref.GetPosition();
+				auto lightLocation = a_ref->GetPosition();
 				float currentDistance = lightLocation.GetDistance(refLocation);
 				if (currentDistance > lastDistance) return RE::BSContainer::ForEachResult::kContinue;
 
 				found = true;
-				response = &a_ref;
+				response = a_ref;
 				return RE::BSContainer::ForEachResult::kContinue;
 				});
 		}
@@ -55,12 +54,12 @@ namespace Papyrus {
 		if (const auto TES = RE::TES::GetSingleton(); TES) {
 			auto centerLocation = a_center->data.location;
 
-			TES->ForEachReferenceInRange(a_center, a_radius, [&](RE::TESObjectREFR& a_ref) {
-				auto* baseBound = a_ref.GetBaseObject();
+			TES->ForEachReferenceInRange(a_center, a_radius, [&](RE::TESObjectREFR* a_ref) {
+				auto* baseBound = a_ref->GetBaseObject();
 				if (!baseBound) return RE::BSContainer::ForEachResult::kContinue;
 
 				if (clib_util::editorID::get_editorID(baseBound->As<RE::TESForm>()).contains(a_name)) {
-					response = &a_ref;
+					response = a_ref;
 					found = true;
 				}
 				return RE::BSContainer::ForEachResult::kContinue;
@@ -89,7 +88,7 @@ namespace Papyrus {
 	RE::NiPoint3 rotate(float r, const RE::NiPoint3& angles) { return angles2dir(angles) * r; }
 
 	bool IsOccluded(RE::TESObjectREFR* a_fire) {
-		if (!Settings::Settings::GetSingleton()->CheckForOcclusion()) return false;
+		if (!FireRegistry::FireRegistry::GetSingleton()->GetCheckOcclusion()) return false;
 
 		auto* fireCell = a_fire->GetParentCell();
 		const auto bhkWorld = fireCell ? fireCell->GetbhkWorld() : nullptr;
@@ -188,17 +187,17 @@ namespace Papyrus {
 			}
 		}
 
-		auto* settingsSingleton = Settings::Settings::GetSingleton();
+		auto* settingsSingleton = FireRegistry::FireRegistry::GetSingleton();
 		std::vector<RE::TESForm*> validSmoke = std::vector<RE::TESForm*>();
 
-		if (!a_force && settingsSingleton->CheckForOcclusion()) {
+		if (!a_force && settingsSingleton->GetCheckOcclusion()) {
 			if (IsOccluded(a_fire)) {
 				this->frozenFiresRegister.erase(a_fire);
 				return;
 			}
 		}
 
-		if (settingsSingleton->SearchForLights()) {
+		if (settingsSingleton->GetCheckLights()) {
 			auto foundLight = GetNearestReferenceOfType(a_fire, 300.0f, RE::FormType::Light, validSmoke);
 			if (foundLight) {
 				_loggerInfo("Found light {}.",clib_util::editorID::get_editorID(foundLight->GetBaseObject()));
@@ -206,9 +205,8 @@ namespace Papyrus {
 			}
 		}
 
-		if (settingsSingleton->SearchForSmoke()) {
-			validSmoke = FireRegistry::FireRegistry::GetSingleton()->GetMatch(a_fire->GetBaseObject()->As<RE::TESForm>()).validSmokes;
-			auto foundSmoke = GetNearestReferenceOfType(a_fire, 300.0f, RE::FormType::MovableStatic, validSmoke);
+		if (settingsSingleton->GetCheckSmoke()) {
+			auto foundSmoke = GetNearestReferenceOfType(a_fire, 300.0f, RE::FormType::MovableStatic, FireRegistry::FireRegistry::GetSingleton()->GetStoredSmokes());
 			if (foundSmoke) additionalExtinguishes.push_back(foundSmoke);
 		}
 
@@ -304,11 +302,10 @@ namespace Papyrus {
 
 	void ExtinguishAllLoadedFires(STATIC_ARGS) {
 		if (const auto TES = RE::TES::GetSingleton(); TES) {
-			TES->ForEachReferenceInRange(RE::PlayerCharacter::GetSingleton(), 0.0f, [&](RE::TESObjectREFR& a_ref) {
-				if (!a_ref.Is3DLoaded()) return RE::BSContainer::ForEachResult::kContinue;
+			TES->ForEachReferenceInRange(RE::PlayerCharacter::GetSingleton(), 0.0f, [&](RE::TESObjectREFR* a_ref) {
+				if (!a_ref->Is3DLoaded()) return RE::BSContainer::ForEachResult::kContinue;
 
-				auto* currentRef = &a_ref;
-				auto* referenceBoundObject = currentRef ? currentRef->GetBaseObject() : nullptr;
+				auto* referenceBoundObject = a_ref ? a_ref->GetBaseObject() : nullptr;
 				auto* referenceBaseObject = referenceBoundObject ? referenceBoundObject->As<RE::TESForm>() : nullptr;
 				if (!referenceBaseObject) return RE::BSContainer::ForEachResult::kContinue;
 
@@ -316,7 +313,7 @@ namespace Papyrus {
 				auto* offForm = offVersion.offVersion;
 				if (!offForm) return RE::BSContainer::ForEachResult::kContinue;
 
-				Papyrus::Papyrus::GetSingleton()->SendExtinguishEvent(currentRef, offForm, offVersion.dyndolodFire);
+				Papyrus::Papyrus::GetSingleton()->SendExtinguishEvent(a_ref, offForm, offVersion.dyndolodFire);
 				return RE::BSContainer::ForEachResult::kContinue;
 			});
 		}

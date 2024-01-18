@@ -67,7 +67,7 @@ namespace Settings {
 			}
 
 			if (!(IsHex(source.asString()) && IsHex(source.asString()) && IsHex(source.asString()) && IsHex(source.asString()))) {
-				return false
+				return false;
 			}
 		}
 		return true;
@@ -96,6 +96,7 @@ namespace Settings {
 			JSONReader.parse(rawJSON, JSONFile);
 			if (!IsValidFireJSON(JSONFile)) continue;
 
+			auto fireData = JSONFile["Fires"];
 			for (auto& fire : fireData) {
 				FireRegistry::offFire offFireData = FireRegistry::offFire();
 				auto baseSource = fire["Source"].asString();
@@ -166,7 +167,8 @@ namespace Settings {
 					if (!ID || ID == NULL) continue;
 
 					auto* smokeForm = RE::TESDataHandler::GetSingleton()->LookupForm(ID, source);
-					offFireData.validSmokes.push_back(smokeForm);
+					if (!smokeForm) continue;
+					FireRegistry::FireRegistry::GetSingleton()->RegisterSmokeObject(smokeForm);
 
 					auto smokeEDID = clib_util::editorID::get_editorID(smokeForm);
 					if (smokeEDID.empty()) {

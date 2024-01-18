@@ -1,7 +1,6 @@
 #include "hitManager.h"
 #include "fireRegister.h"
 #include "papyrus.h"
-#include "settingsReader.h"
 
 namespace HitManager {
 	bool ValidWeaponHit(RE::TESObjectWEAP* a_weap, bool a_needsFire) {

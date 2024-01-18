@@ -1,7 +1,6 @@
 #include "loadEventManager.h"
 #include "fireRegister.h"
 #include "papyrus.h"
-#include "settingsReader.h"
 
 namespace LoadManager {
 	//Public - Register functions.
