@@ -18,13 +18,12 @@ endmacro()
 
 macro(find_commonlib_path)
 	if(CommonLibName AND NOT ${CommonLibName} STREQUAL "")
-		# Check extern
-		find_path(CommonLibPath
-			include/REL/Relocation.h 
-			PATHS extern/${CommonLibName}Latest)
 
-		if(${CommonLibPath} STREQUAL "CommonLibPath-NOTFOUND")
-			# Check path
+		if(NOT SUPPORT_PRE1130) 
+			find_path(CommonLibPath
+				include/REL/Relocation.h 
+				PATHS extern/${CommonLibName})
+		else()
 			set_from_environment(${CommonLibName}Path)
 			set(CommonLibPath ${${CommonLibName}Path})
 		endif()
@@ -54,7 +53,7 @@ elseif(BUILD_SKYRIMVR)
 
 else()
 
-	set(CommonLibName "CommonLibSSEOld")
+	set(CommonLibName "CommonLibSSE")
 	set_from_environment(Skyrim64Path)
 	set(SkyrimPath ${Skyrim64Path})
 	set(SkyrimVersion "Skyrim SSE")
