@@ -8,6 +8,7 @@ namespace LoadManager {
 		public ISingleton<LoadManager> {
 	public:
 		bool RegisterListener();
+		bool UnRegisterListener();
 	private:
 		RE::BSEventNotifyControl ProcessEvent(const RE::TESCellAttachDetachEvent* a_event, RE::BSTEventSource<RE::TESCellAttachDetachEvent>* a_eventSource) override;
 	};
@@ -16,7 +17,7 @@ namespace LoadManager {
 		public RE::BSTEventSink<RE::BGSActorCellEvent>,
 		public ISingleton<ActorCellManager> {
 	public:
-		bool RegisterListener(); 
+		bool RegisterListener();
 	private:
 		RE::BSEventNotifyControl ProcessEvent(const RE::BGSActorCellEvent* a_event, RE::BSTEventSource<RE::BGSActorCellEvent>* a_eventSource) override;
 

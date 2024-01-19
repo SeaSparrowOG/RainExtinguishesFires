@@ -8,6 +8,7 @@ namespace HitManager {
 		public ISingleton<HitManager> {
 	public:
 		bool RegisterListener();
+		bool UnRegisterListener();
 	private:
 		RE::BSEventNotifyControl ProcessEvent(const RE::TESHitEvent* a_event, RE::BSTEventSource<RE::TESHitEvent>* a_eventSource) override;
 	};

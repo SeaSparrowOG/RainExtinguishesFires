@@ -1,39 +1,36 @@
 #pragma once
 
-namespace FireRegistry {
-	//Might seem redundant. More information will be made available here.
-	struct offFire {
-		bool                      dyndolodFire;
-		RE::TESForm*              offVersion;
-
-		offFire() {
-			this->offVersion = nullptr;
-			this->dyndolodFire = false;
-		}
+namespace CachedData {
+	struct FireData {
+		bool         dyndolodFire;
+		RE::TESForm* offVersion;
 	};
 
+	/**
+	* FireRegistry holds settings and valid fires.
+	*/
 	class FireRegistry : public ISingleton<FireRegistry> {
 	public:
 		bool                      BuildRegistry();
-		bool                      IsValidLocation();
 		bool                      IsValidSmoke(RE::TESForm* a_smoke);
+		bool                      IsManagedFire(RE::TESForm* a_litFire);
+		bool                      IsDynDOLODFire(RE::TESForm* a_litFire);
 		bool                      GetCheckOcclusion();
 		bool                      GetCheckLights();
 		bool                      GetCheckSmoke();
-		offFire                   GetMatch(RE::TESForm* a_litFire);
-		RE::TESForm*              GetOffMatch(RE::TESForm* a_offFire);
-		std::vector<RE::TESForm*> GetStoredSmokes();
-		bool                      RegisterPair(RE::TESForm* a_lit, offFire a_off);
-		bool                      RegisterReversePair(RE::TESForm* a_off, RE::TESForm* a_lit);
+		FireData                  GetOffForm(RE::TESForm* a_litFire);
+		std::vector<RE::TESForm*> GetStoredSmokeObjects();
+		bool                      RegisterPair(RE::TESForm* a_lit, FireData a_fireData);
 		bool                      RegisterSmokeObject(RE::TESForm* a_smoke);
 		void                      SetLookupSmoke(bool a_value);
 		void                      SetLookupLight(bool a_value);
 	private:
-		bool                                           calculateOcclusion;
-		bool                                           lookupLights;
-		bool                                           lookupSmoke;
-		std::unordered_map<RE::TESForm*, offFire>      fireRegister;
-		std::unordered_map<RE::TESForm*, RE::TESForm*> reverseRegister;
-		std::unordered_map<RE::TESForm*, bool>         smokeRegister;
+		bool                                       calculateOcclusion;
+		bool                                       lookupLights;
+		bool                                       lookupSmoke;
+		std::vector<RE::TESForm*>                  storedSmoke;
+		std::unordered_map<RE::TESForm*, bool>     smokeRegister;
+		std::unordered_map<RE::TESForm*, bool>     reverseFireRegister;
+		std::unordered_map<RE::TESForm*, FireData> fireRegister;
 	};
 }

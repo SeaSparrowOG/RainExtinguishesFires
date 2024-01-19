@@ -55,6 +55,14 @@ namespace HitManager {
 		return true;
 	}
 
+	bool HitManager::HitManager::UnRegisterListener() {
+		auto* singleton = HitManager::GetSingleton();
+		if (!singleton) return false;
+
+		RE::ScriptEventSourceHolder::GetSingleton()->RemoveEventSink(singleton);
+		return true;
+	}
+
 	RE::BSEventNotifyControl HitManager::ProcessEvent(const RE::TESHitEvent* a_event, RE::BSTEventSource<RE::TESHitEvent>* a_eventSource) {
 		if (!(a_event && a_eventSource)) return RE::BSEventNotifyControl::kContinue;
 
@@ -74,15 +82,9 @@ namespace HitManager {
 
 		RE::TESForm* resultingFire = nullptr;
 		bool needsFire = false;
-		resultingFire = FireRegistry::FireRegistry::GetSingleton()->GetOffMatch(hitBase);
+		auto fireData = CachedData::FireRegistry::GetSingleton()->GetOffForm(hitBase);
+		resultingFire = fireData.offVersion;
 		if (resultingFire) needsFire = true;
-		auto offVersion = FireRegistry::FireRegistry::GetSingleton()->GetMatch(hitBase);
-
-		if (!needsFire) {
-			if (offVersion.offVersion) resultingFire = offVersion.offVersion;
-		}
-
-		if (!resultingFire) return RE::BSEventNotifyControl::kContinue;
 
 		bool goodToGo = false;
 		if (hitWeap && ValidWeaponHit(hitWeap, needsFire)) goodToGo = true;
@@ -92,10 +94,10 @@ namespace HitManager {
 		}
 
 		if (needsFire) {
-			Papyrus::Papyrus::GetSingleton()->SendRelightEvent(hitRef, true);
+			Papyrus::Papyrus::GetSingleton()->RelightFire(hitRef);
 		}
 		else {
-			Papyrus::Papyrus::GetSingleton()->SendExtinguishEvent(hitRef, offVersion.offVersion, offVersion.dyndolodFire, true);
+			Papyrus::Papyrus::GetSingleton()->ExtinguishFire(hitRef, fireData);
 		}
 		return RE::BSEventNotifyControl::kContinue;
 	}

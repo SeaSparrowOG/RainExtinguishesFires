@@ -23,12 +23,20 @@ namespace LoadManager {
 		return true;
 	}
 
+	bool LoadManager::UnRegisterListener() {
+		auto* singleton = LoadManager::GetSingleton();
+		if (!singleton) return false;
+
+		RE::ScriptEventSourceHolder::GetSingleton()->RemoveEventSink(singleton);
+		return true;
+	}
+
 	//Process Event - Thing loaded
 	RE::BSEventNotifyControl LoadManager::ProcessEvent(const RE::TESCellAttachDetachEvent* a_event, RE::BSTEventSource<RE::TESCellAttachDetachEvent>* a_eventSource) {
-		if (!Papyrus::Papyrus::GetSingleton()->IsRaining()) return continueEvent;
 		if (!(a_event && a_eventSource)) return continueEvent;
 		if (!a_event->attached) return continueEvent;
-		if (!FireRegistry::FireRegistry::GetSingleton()->IsValidLocation()) return continueEvent;
+		auto* playerParentCell = RE::PlayerCharacter::GetSingleton()->GetParentCell();
+		if (!playerParentCell || playerParentCell->IsInteriorCell()) return continueEvent;
 
 		auto* eventReferencePtr = &a_event->reference;
 		auto* eventReference = eventReferencePtr ? eventReferencePtr->get() : nullptr;
@@ -36,12 +44,12 @@ namespace LoadManager {
 		auto* referenceBaseObject = referenceBoundObject ? referenceBoundObject->As<RE::TESForm>() : nullptr;
 		if (!referenceBaseObject) return continueEvent;
 
-		auto offVersion = FireRegistry::FireRegistry::GetSingleton()->GetMatch(referenceBaseObject);
+		auto offVersion = CachedData::FireRegistry::GetSingleton()->GetOffForm(referenceBaseObject);
 		if (offVersion.offVersion) {
-			Papyrus::Papyrus::GetSingleton()->SendExtinguishEvent(eventReference, offVersion.offVersion, offVersion.dyndolodFire);
+			Papyrus::Papyrus::GetSingleton()->ExtinguishFire(eventReference, offVersion);
 		}
-		else if (FireRegistry::FireRegistry::GetSingleton()->GetOffMatch(referenceBaseObject)) {
-			Papyrus::Papyrus::GetSingleton()->SendRelightEvent(eventReference);
+		else if (CachedData::FireRegistry::GetSingleton()->IsManagedFire(referenceBaseObject)) {
+			Papyrus::Papyrus::GetSingleton()->RelightFire(eventReference);
 		}
 		return continueEvent;
 	}
@@ -65,17 +73,16 @@ namespace LoadManager {
 		if (cell->IsInteriorCell()) {
 			//Moved from exterior to interior.
 			if (!this->wasInInterior) {
-				Papyrus::Papyrus::GetSingleton()->ResetFrozenMaps();
-				Papyrus::Papyrus::GetSingleton()->SendPlayerChangedInteriorExterior(true);
+				Papyrus::Papyrus::GetSingleton()->SendPlayerChangedInteriorExterior(false);
 			}
-			this->wasInInterior = true;
+			this->wasInInterior = false;
 		}
 		else {
 			//Moved from interior to exterior.
 			if (this->wasInInterior) {
-				Papyrus::Papyrus::GetSingleton()->SendPlayerChangedInteriorExterior(false);
+				Papyrus::Papyrus::GetSingleton()->SendPlayerChangedInteriorExterior(true);
 			}
-			this->wasInInterior = false;
+			this->wasInInterior = true;
 		}
 		return continueEvent;
 	}

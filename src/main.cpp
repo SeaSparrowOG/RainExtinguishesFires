@@ -1,6 +1,10 @@
 #include <spdlog/sinks/basic_file_sink.h>
 
-#include "startupTasks.h"
+#include "fireRegister.h"
+#include "hitManager.h"
+#include "hooks.h"
+#include "loadEventManager.h"
+#include "papyrus.h"
 
 void SetupLog() {
     auto logsFolder = SKSE::log::log_directory();
@@ -23,11 +27,50 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 {
     switch (a_message->type) {
     case SKSE::MessagingInterface::kDataLoaded: {
-        if (StartupTasks::ApplyDataLoadedChanges()) {
-            _loggerInfo("Startup tasks completed, enjoy your game!");
+        bool unregisterAll = false;
+        bool registeredLoad = false;
+        bool registeredChange = false;
+        bool registeredHit = false;
+
+        Hooks::Install();
+        _loggerInfo("Hooked functions.");
+
+        if (!unregisterAll && LoadManager::LoadManager::GetSingleton()->RegisterListener()) {
+            _loggerInfo("Registered the Load/Unload manager.");
+            registeredLoad = true;
         }
         else {
-            _loggerInfo("Errors occured during loading.");
+            unregisterAll = true;
+        }
+
+        if (!unregisterAll && LoadManager::ActorCellManager::GetSingleton()->RegisterListener()) {
+            _loggerInfo("Registered the Player manager.");
+            registeredChange = true;
+        }
+        else {
+            unregisterAll = true;
+        }
+
+        if (!unregisterAll && HitManager::HitManager::GetSingleton()->RegisterListener()) {
+            _loggerInfo("Registered the Hit manager.");
+            registeredHit = true;
+        }
+        else {
+            unregisterAll = true;
+        }
+
+        if (!unregisterAll && SKSE::GetPapyrusInterface()->Register(Papyrus::RegisterFunctions)) {
+            _loggerInfo("Registered the new Papyrus functions.");
+        }
+        else {
+            unregisterAll = true;
+        }
+
+        if (unregisterAll) {
+            _loggerInfo("Error(s) occured while preparing the plugin. Loading stopped.");
+            LoadManager::LoadManager::GetSingleton()->UnRegisterListener();
+            HitManager::HitManager::GetSingleton()->UnRegisterListener();
+            Papyrus::Papyrus::GetSingleton()->DisablePapyrus();
         }
         break;
     }
@@ -46,9 +89,14 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
     v.UsesUpdatedStructs();
 
 #ifdef SUPPORT_OLDER_VERSION
-    v.CompatibleVersions({ SKSE::RUNTIME_1_6_1130, SKSE::RUNTIME_1_6_659, SKSE::RUNTIME_1_6_640, SKSE::RUNTIME_1_6_629 });
+    v.CompatibleVersions({ 
+        SKSE::RUNTIME_1_6_659, 
+        SKSE::RUNTIME_1_6_640, 
+        SKSE::RUNTIME_1_6_629 });
 #else
-    v.CompatibleVersions({ SKSE::RUNTIME_LATEST });
+    v.CompatibleVersions({ 
+        SKSE::RUNTIME_1_6_1130, 
+        _1_6_1170 });
 #endif
 
     return v;

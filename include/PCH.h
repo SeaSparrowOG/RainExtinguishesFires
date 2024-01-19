@@ -23,7 +23,6 @@
 
 #define DLLEXPORT __declspec(dllexport)
 
-namespace logger = SKSE::log;
 namespace WinAPI = SKSE::WinAPI;
 
 using namespace std::literals;
@@ -44,6 +43,7 @@ using namespace clib_util::singleton;
 
 #define _loggerInfo SKSE::log::info
 #define _loggerError SKSE::log::error
+#define _1_6_1170 (unsigned short)1U, (unsigned short)6U, (unsigned short)1170U, (unsigned short)0U
 
 namespace stl {
 	template <class T>
