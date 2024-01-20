@@ -5,7 +5,8 @@ set(VR_VERSION 2)
 set(AE_VERSION 1)
 
 # ---- Options ----
-option(SUPPORT_PRE1130 "Build for 1.6.640 using an older version of Commonlib" ON)
+option(SUPPORT_LATEST "Builds for the latest version of Skyrim." OFF)
+option(SUPPORT_VR "Build for VR. I cannot test this." OFF)
 option(BUILD_SKYRIMVR "Build for Skyrim VR" OFF)
 option(BUILD_SKYRIMAE "Build for Skyrim AE" OFF)
 
@@ -19,13 +20,13 @@ endmacro()
 macro(find_commonlib_path)
 	if(CommonLibName AND NOT ${CommonLibName} STREQUAL "")
 
-		if(NOT SUPPORT_PRE1130) 
+		if(SUPPORT_LATEST OR SUPPORT_VR) 
 			find_path(CommonLibPath
 				include/REL/Relocation.h 
 				PATHS extern/${CommonLibName})
 		else()
-			set_from_environment(${CommonLibName}Path)
-			set(CommonLibPath ${${CommonLibName}Path})
+			set_from_environment(${CommonLibName}PO3Old)
+			set(CommonLibPath ${${CommonLibName}PO3Old})
 		endif()
 	endif()
 endmacro()
@@ -40,9 +41,7 @@ if(BUILD_SKYRIMAE)
 	set(SkyrimPath ${SkyrimAEPath})
 	set(SkyrimVersion "Skyrim AE")
 	set(VERSION ${VERSION}.${AE_VERSION})
-
 elseif(BUILD_SKYRIMVR)
-
 	add_compile_definitions(SKYRIMVR)
 	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 	set(CommonLibName "CommonLibVR")
@@ -50,14 +49,11 @@ elseif(BUILD_SKYRIMVR)
 	set(SkyrimPath ${SkyrimVRPath})
 	set(SkyrimVersion "Skyrim VR")
 	set(VERSION ${VERSION}.${VR_VERSION})
-
 else()
-
 	set(CommonLibName "CommonLibSSE")
 	set_from_environment(Skyrim64Path)
 	set(SkyrimPath ${Skyrim64Path})
 	set(SkyrimVersion "Skyrim SSE")
-
 endif()
 
 find_commonlib_path()
@@ -68,7 +64,7 @@ message(
 )
 message(
 	STATUS
-	"Building for older versions: ${SUPPORT_PRE1130}."
+	"Building for latest version: ${SUPPORT_LATEST}."
 )
 
 if(DEFINED VCPKG_ROOT)
@@ -139,7 +135,7 @@ if (DEFINED CommonLibPath AND NOT ${CommonLibPath} STREQUAL "" AND IS_DIRECTORY 
 else ()
 	message(
 		FATAL_ERROR
-		"Variable ${CommonLibName}Path is not set."
+		"Variable ${CommonLibName} is not set."
 	)
 endif()
 

@@ -131,10 +131,10 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a_
     _loggerInfo("Version build:");
 
 #ifdef SKYRIM_AE
-#ifdef SUPPORT_OLDER_VERSION
-    _loggerInfo("    >Pre-1.6.1130 Version.");
+#ifdef SUPPORT_LATEST
+    _loggerInfo("    >Latest Version.");
 #else 
-    _loggerInfo("    >1.6.1130 Version.");
+    _loggerInfo("    >Pre-1.6.1130 Version.");
 #endif
 #else 
     _loggerInfo("    >1.5.97 Version.");

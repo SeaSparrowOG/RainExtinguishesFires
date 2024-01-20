@@ -39,21 +39,21 @@
     {
       "name": "se",
       "hidden": true,
-      "binaryDir": "${sourceDir}/build-1597"
+      "binaryDir": "${sourceDir}/build-15"
     },
     {
       "name": "ae",
       "hidden": true,
-      "binaryDir": "${sourceDir}/build-161170",
+      "binaryDir": "${sourceDir}/build-16",
       "cacheVariables": {
         "BUILD_SKYRIMAE": true,
-        "SUPPORT_PRE1130": false
+        "SUPPORT_LATEST": true
       }
     },
     {
       "name": "ae-old",
       "hidden": true,
-      "binaryDir": "${sourceDir}/buildae-16640",
+      "binaryDir": "${sourceDir}/build-16-old",
       "cacheVariables": {
         "BUILD_SKYRIMAE": true
       }
@@ -63,7 +63,8 @@
       "hidden": true,
       "binaryDir": "${sourceDir}/build-vr",
       "cacheVariables": {
-        "BUILD_SKYRIMVR": true
+        "BUILD_SKYRIMVR": true,
+        "SUPPORT_VR":  true
       }
     },
     {
@@ -109,12 +110,12 @@
   ],
   "buildPresets": [
     {
-      "name": "Release - 1.6.1170",
+      "name": "Release - 1.6",
       "configurePreset": "vs2022-windows-vcpkg-ae",
       "configuration": "Release"
     },
     {
-      "name": "Release - 1.5.97",
+      "name": "Release - 1.5",
       "configurePreset": "vs2022-windows-vcpkg-se",
       "configuration": "Release"
     },
@@ -124,29 +125,9 @@
       "configuration": "Release"
     },
     {
-      "name": "Release - 1.6.640",
+      "name": "Release - 1.6 Old",
       "configurePreset": "vs2022-windows-vcpkg-ae-old",
       "configuration": "Release"
-    },
-    {
-      "name": "Debug - 1.6.1170",
-      "configurePreset": "vs2022-windows-vcpkg-ae",
-      "configuration": "Debug"
-    },
-    {
-      "name": "Debug - 1.5.97",
-      "configurePreset": "vs2022-windows-vcpkg-se",
-      "configuration": "Debug"
-    },
-    {
-      "name": "Debug - VR",
-      "configurePreset": "vs2022-windows-vcpkg-vr",
-      "configuration": "Debug"
-    },
-    {
-      "name": "Debug - 1.6.640",
-      "configurePreset": "vs2022-windows-vcpkg-ae-old",
-      "configuration": "Debug"
     }
   ]
 }
