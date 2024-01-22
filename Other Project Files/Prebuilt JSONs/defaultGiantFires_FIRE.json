@@ -1,0 +1,39 @@
+{
+    "Fires": [{
+            "Source":"Skyrim.esm",
+            "SourceID":"0x51577",
+            "OffSource":"RainExtinguishesFires.esp",
+            "OffSourceID":"0x815"
+        }, 
+        {
+            "Source":"Skyrim.esm",
+            "SourceID":"0xF597F",
+            "OffSource":"RainExtinguishesFires.esp",
+            "OffSourceID":"0x816"
+        }, 
+        {
+            "Source":"Skyrim.esm",
+            "SourceID":"0xF6304",
+            "OffSource":"RainExtinguishesFires.esp",
+            "OffSourceID":"0x817"
+        }, 
+        {
+            "Source":"Skyrim.esm",
+            "SourceID":"0x10ACC0",
+            "OffSource":"RainExtinguishesFires.esp",
+            "OffSourceID":"0x818"
+        }, 
+        {
+            "Source":"Skyrim.esm",
+            "SourceID":"0x4C5CE",
+            "OffSource":"RainExtinguishesFires.esp",
+            "OffSourceID":"0x819"
+        }, 
+        {
+            "Source":"Skyrim.esm",
+            "SourceID":"0x4C5CF",
+            "OffSource":"RainExtinguishesFires.esp",
+            "OffSourceID":"0x81A"
+        }
+    ]
+}
