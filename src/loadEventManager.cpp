@@ -31,7 +31,6 @@ namespace LoadManager {
 		return true;
 	}
 
-	//Process Event - Thing loaded
 	RE::BSEventNotifyControl LoadManager::ProcessEvent(const RE::TESCellAttachDetachEvent* a_event, RE::BSTEventSource<RE::TESCellAttachDetachEvent>* a_eventSource) {
 		if (!(a_event && a_eventSource)) return continueEvent;
 		if (!a_event->attached) return continueEvent;

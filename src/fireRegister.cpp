@@ -1,5 +1,8 @@
 #include "fireRegister.h"
 
+#include <iostream>
+#include <fstream>  
+
 namespace SettingsReader {
 	/**
 	* Converts given string into a usable FormID. Credids to Colinswrath.
@@ -63,10 +66,74 @@ namespace SettingsReader {
 		return true;
 	}
 
+	bool ShouldRebuildINI(CSimpleIniA* a_ini) {
+		const char* section = "General";
+		const char* keys[4] = { "bSquashLights", "bSquashSmoke", "fLightSearchRadius", "fSmokeSearchRadius" };
+		int sectionLength = 4;
+		std::list<CSimpleIniA::Entry> keyHolder;
+
+		a_ini->GetAllKeys(section, keyHolder);
+		if (std::size(keyHolder) != sectionLength) return true;
+		for (auto* key : keys) {
+			if (!a_ini->KeyExists(section, key)) return true;
+		}
+		return false;
+	}
+
 	bool BuildINI() {
+		std::filesystem::path f{ "./Data/SKSE/Plugins/RainExtinguishesFires.ini" };
+		bool createEntries = false;
+		if (!std::filesystem::exists(f)) {
+			std::fstream createdINI;
+			createdINI.open(f, std::ios::out);
+			createdINI.close();
+			createEntries = true;
+		}
+
+		CSimpleIniA ini;
+		ini.SetUnicode(); 
+		ini.LoadFile(f.c_str());
+		if (!createEntries) { createEntries = ShouldRebuildINI(&ini); }
+
+		if (createEntries) {
+			ini.Delete("General", NULL);
+			ini.SetBoolValue("General",   "bSquashLights", true, ";Disables the nearest found light.");
+			ini.SetBoolValue("General",   "bSquashSmoke", true, ";Disables the nearest found smoke object.");
+			ini.SetDoubleValue("General", "fLightSearchRadius", 300.0, ";The distance over which to search for the light.");
+			ini.SetDoubleValue("General", "fSmokeSearchRadius", 300.0, ";The distance over which to search for the smoke object.");
+			ini.SaveFile(f.c_str());
+		}
+
 		auto settingsSingleton = CachedData::FireRegistry::GetSingleton();
-		settingsSingleton->SetLookupLight(true);
-		settingsSingleton->SetLookupSmoke(true);
+		settingsSingleton->SetLookupLight(ini.GetBoolValue("General", "bSquashLights", true));
+		settingsSingleton->SetLookupSmoke(ini.GetBoolValue("General", "bSquashSmoke", true));
+		settingsSingleton->SetLookupLightDistance(ini.GetDoubleValue("General", "fLightSearchRadius", 300.0));
+		settingsSingleton->SetLookupSmokeDistance(ini.GetDoubleValue("General", "fSmokeSearchRadius", 300.0));
+
+		std::filesystem::path custom{ "./Data/SKSE/Plugins/RainExtinguishesFires_custom.ini" };
+		if (!std::filesystem::exists(f)) {
+			return true;
+		}
+
+		CSimpleIniA customINI;
+		customINI.SetUnicode();
+		customINI.LoadFile(custom.c_str());
+
+		if (customINI.KeyExists("General", "bSquashLights")) {
+			settingsSingleton->SetLookupLight(customINI.GetBoolValue("General", "bSquashLights", true));
+		}
+
+		if (customINI.KeyExists("General", "bSquashSmoke")) {
+			settingsSingleton->SetLookupSmoke(customINI.GetBoolValue("General", "bSquashSmoke", true));
+		}
+
+		if (customINI.KeyExists("General", "fLightSearchRadius")) {
+			settingsSingleton->SetLookupLightDistance(customINI.GetDoubleValue("General", "fLightSearchRadius", 300.0));
+		}
+
+		if (customINI.KeyExists("General", "fSmokeSearchRadius")) {
+			settingsSingleton->SetLookupSmokeDistance(customINI.GetDoubleValue("General", "fSmokeSearchRadius", 300.0));
+		}
 		return true;
 	}
 
@@ -193,9 +260,17 @@ namespace CachedData {
 
 	std::vector<RE::TESForm*> FireRegistry::GetStoredSmokeObjects() { return this->storedSmoke; }
 
+	float CachedData::FireRegistry::GetSmokeSearchDistance() { return this->smokeLookupRadius; }
+
+	float CachedData::FireRegistry::GetLightSearchDistance() { return this->lightLookupRadius; }
+
 	void FireRegistry::SetLookupSmoke(bool a_value) { this->lookupSmoke = a_value; }
 
 	void FireRegistry::SetLookupLight(bool a_value) { this->lookupLights = a_value; }
+
+	void CachedData::FireRegistry::SetLookupSmokeDistance(float a_value) { this->smokeLookupRadius = a_value; }
+
+	void CachedData::FireRegistry::SetLookupLightDistance(float a_value) { this->lightLookupRadius = a_value; }
 
 	bool FireRegistry::IsManagedFire(RE::TESForm* a_litFire) {
 		if (this->fireRegister.contains(a_litFire)) return true;

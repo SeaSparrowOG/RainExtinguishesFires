@@ -246,7 +246,7 @@ namespace Papyrus {
 		}
 
 		if (settingsSingleton->GetCheckLights()) {
-			auto foundLight = GetNearestReferenceOfType(a_fire, 300.0f, RE::FormType::Light);
+			auto foundLight = GetNearestReferenceOfType(a_fire, settingsSingleton->GetLightSearchDistance(), RE::FormType::Light);
 			if (foundLight) {
 				additionalExtinguishes.push_back(foundLight);
 			}
@@ -254,7 +254,7 @@ namespace Papyrus {
 
 		if (settingsSingleton->GetCheckSmoke()) {
 			for (auto* smokeObject : validSmoke) {
-				auto foundSmoke = GetNearestReferenceOfType(a_fire, 300.0f, RE::FormType::MovableStatic, smokeObject);
+				auto foundSmoke = GetNearestReferenceOfType(a_fire, settingsSingleton->GetSmokeSearchDistance(), RE::FormType::MovableStatic, smokeObject);
 				if (foundSmoke) additionalExtinguishes.push_back(foundSmoke);
 			}
 		}
@@ -370,7 +370,7 @@ namespace Papyrus {
 	void ExtinguishAllLoadedFires(STATIC_ARGS) {
 		if (const auto TES = RE::TES::GetSingleton(); TES) {
 			TES->ForEachReferenceInRange(RE::PlayerCharacter::GetSingleton(), 0.0f, [&](RE::TESObjectREFR* a_ref) {
-				if (!a_ref->Is3DLoaded()) return RE::BSContainer::ForEachResult::kContinue;
+				//if (!a_ref->Is3DLoaded()) return RE::BSContainer::ForEachResult::kContinue;
 
 				auto* referenceBoundObject = a_ref ? a_ref->GetBaseObject() : nullptr;
 				auto* referenceBaseObject = referenceBoundObject ? referenceBoundObject->As<RE::TESForm>() : nullptr;
