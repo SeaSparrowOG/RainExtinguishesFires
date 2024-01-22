@@ -18,6 +18,8 @@ namespace Papyrus {
 		void AddWeatherChangeListener(const RE::TESForm* a_form, bool a_listen);
 		void AddInteriorExteriorListener(const RE::TESForm* a_form, bool a_listen);
 		void ExtinguishFire(RE::TESObjectREFR* a_litFire, CachedData::FireData a_data);
+		bool IsRaining();
+		bool ManipulateFireRegistry(RE::TESObjectREFR* a_fire, bool a_add);
 		void RelightFire(RE::TESObjectREFR* a_litFire);
 		void SendWeatherChange(RE::TESWeather* a_weather);
 		void SendPlayerChangedInteriorExterior(bool a_movedToExterior);

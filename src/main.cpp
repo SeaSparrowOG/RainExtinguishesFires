@@ -66,6 +66,13 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
             unregisterAll = true;
         }
 
+        if (CachedData::FireRegistry::GetSingleton()->BuildRegistry()) {
+            _loggerInfo("Built the cache system.");
+        }
+        else {
+            unregisterAll = true;
+        }
+
         if (unregisterAll) {
             _loggerInfo("Error(s) occured while preparing the plugin. Loading stopped.");
             LoadManager::LoadManager::GetSingleton()->UnRegisterListener();
@@ -131,10 +138,10 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a_
     _loggerInfo("Version build:");
 
 #ifdef SKYRIM_AE
-#ifdef SUPPORT_LATEST
-    _loggerInfo("    >Latest Version.");
-#else 
+#ifdef SUPPORT_OLDER_VERSION
     _loggerInfo("    >Pre-1.6.1130 Version.");
+#else 
+    _loggerInfo("    >Latest Version.");
 #endif
 #else 
     _loggerInfo("    >1.5.97 Version.");

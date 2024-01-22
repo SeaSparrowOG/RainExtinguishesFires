@@ -46,7 +46,10 @@ namespace LoadManager {
 
 		auto offVersion = CachedData::FireRegistry::GetSingleton()->GetOffForm(referenceBaseObject);
 		if (offVersion.offVersion) {
-			Papyrus::Papyrus::GetSingleton()->ExtinguishFire(eventReference, offVersion);
+			auto* papyrusSingleton = Papyrus::Papyrus::GetSingleton();
+			if (papyrusSingleton->IsRaining()) {
+				Papyrus::Papyrus::GetSingleton()->ExtinguishFire(eventReference, offVersion);
+			}
 		}
 		else if (CachedData::FireRegistry::GetSingleton()->IsManagedFire(referenceBaseObject)) {
 			Papyrus::Papyrus::GetSingleton()->RelightFire(eventReference);

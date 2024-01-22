@@ -29,7 +29,7 @@ namespace Papyrus {
 				auto* baseForm = baseBound->As<RE::TESForm>();
 				if (!baseForm) return RE::BSContainer::ForEachResult::kContinue;
 				if (!baseBound->Is(a_type)) return RE::BSContainer::ForEachResult::kContinue;
-				if (a_matchAgainst && a_matchAgainst == baseForm) return RE::BSContainer::ForEachResult::kContinue;
+				if (a_matchAgainst && a_matchAgainst != baseForm) return RE::BSContainer::ForEachResult::kContinue;
 
 				auto lightLocation = a_ref->GetPosition();
 				float currentDistance = lightLocation.GetDistance(refLocation);
@@ -89,9 +89,63 @@ namespace Papyrus {
 		}
 	}
 
-	void Papyrus::Papyrus::RelightFire(RE::TESObjectREFR* a_litFire) {
-		auto trick = a_litFire->GetPositionX();
+	bool Papyrus::IsRaining() { return this->isRaining; }
+
+	bool Papyrus::ManipulateFireRegistry(RE::TESObjectREFR* a_fire, bool a_add) {
+		if (this->disable) return false;
+		if (!a_fire) return false;
+
+		auto fireBound = a_fire->GetBaseObject();
+		auto* fireBase = fireBound ? fireBound->As<RE::TESForm>() : nullptr;
+		if (!(fireBase && CachedData::FireRegistry::GetSingleton()->IsManagedFire(fireBase))) return false;
+
+		if (a_add) {
+			if (this->frozenFiresRegister.contains(a_fire)) return false;
+			this->frozenFiresRegister[a_fire] = true;
+		}
+		else {
+			if (!this->frozenFiresRegister.contains(a_fire)) return false;
+			this->frozenFiresRegister.erase(a_fire);
+		}
+		return true;
+	}
+
+	void Papyrus::RelightFire(RE::TESObjectREFR* a_litFire) {
 		if (this->disable) return;
+		if (this->frozenFiresRegister.contains(a_litFire)) return;
+
+		auto baseBound = a_litFire->GetBaseObject();
+		auto* baseForm = baseBound ? baseBound->As<RE::TESForm>() : nullptr;
+		if (!baseForm) return;
+		if (!CachedData::FireRegistry::GetSingleton()->IsManagedFire(baseForm)) return;
+		if (!this->ManipulateFireRegistry(a_litFire, true)) return;
+
+		auto* vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
+		auto* handlePolicy = vm->GetObjectHandlePolicy();
+		if (!handlePolicy) {
+			this->ManipulateFireRegistry(a_litFire, false);
+			return;
+		}
+
+		RE::VMHandle handle = handlePolicy->GetHandleForObject(a_litFire->GetFormType(), a_litFire);
+		if (!handle) {
+			this->ManipulateFireRegistry(a_litFire, false);
+			return;
+		}
+
+		for (auto& foundScript : vm->attachedScripts.find(handle)->second) {
+			if (!foundScript) continue;
+			if (!foundScript->GetTypeInfo()) continue;
+			if (foundScript->GetTypeInfo()->GetName() != "REF_ObjectRefOffController"sv) continue;
+
+			auto callback = RE::BSTSmartPointer<RE::BSScript::IStackCallbackFunctor>();
+			auto args = RE::MakeFunctionArguments();
+			const RE::BSFixedString functionName = "Relight"sv;
+			auto scriptObject = foundScript.get();
+			auto object = RE::BSTSmartPointer<RE::BSScript::Object>(scriptObject);
+			vm->DispatchMethodCall(object, functionName, args, callback);
+			break;
+		}
 	}
 
 	void Papyrus::SendWeatherChange(RE::TESWeather* a_weather) {
@@ -154,16 +208,11 @@ namespace Papyrus {
 
 	void Papyrus::ExtinguishFire(RE::TESObjectREFR* a_fire, CachedData::FireData a_data) {
 		if (this->disable) return;
-		if (this->frozenFiresRegister.find(a_fire) != this->frozenFiresRegister.end()) {
-			return;
-		}
+		if (this->frozenFiresRegister.contains(a_fire)) return;
 
-		auto* settingsSingleton = CachedData::FireRegistry::GetSingleton();
-		auto offData = settingsSingleton->GetOffForm(a_fire);
-		auto* offForm = offData.offVersion;
-
+		auto* offForm = a_data.offVersion;
 		if (!offForm) return;
-		this->frozenFiresRegister[a_fire] = true;
+
 		std::vector<RE::TESObjectREFR*> additionalExtinguishes = std::vector<RE::TESObjectREFR*>();
 
 		auto* referenceExtraList = &a_fire->extraList;
@@ -172,17 +221,24 @@ namespace Papyrus {
 		bool dyndolodFire = a_data.dyndolodFire;
 
 		if (hasEnableParents || (hasEnableChildren && !dyndolodFire)) {
-			this->frozenFiresRegister.erase(a_fire);
 			return;
 		}
 		else if (hasEnableChildren && dyndolodFire) {
 			std::string editorID = clib_util::editorID::get_editorID(a_fire->GetBaseObject()->As<RE::TESForm>());
-			if (!editorID.contains("DYNDOLOD")) {
-				this->frozenFiresRegister.erase(a_fire);
-				return;
-			}
+			if (!editorID.contains("DYNDOLOD")) return;
+		}
+		else if (hasEnableChildren) {
+			return;
 		}
 
+		auto offBoundForm = offForm->As<RE::TESBoundObject>();
+		if (!offBoundForm) {
+			this->ManipulateFireRegistry(a_fire, false);
+			return;
+		}
+
+		if (!this->ManipulateFireRegistry(a_fire, true)) return;
+		auto settingsSingleton = CachedData::FireRegistry::GetSingleton();
 		std::vector<RE::TESForm*> validSmoke = settingsSingleton->GetStoredSmokeObjects();
 		
 		if (settingsSingleton->GetCheckOcclusion()) {
@@ -215,7 +271,62 @@ namespace Papyrus {
 				}
 			}
 		}
-		//TODO: Extinguish this fire.
+
+		auto offFire = a_fire->PlaceObjectAtMe(offBoundForm, false);
+		auto* offReference = offFire.get();
+		this->ManipulateFireRegistry(offReference, true);
+		offReference->MoveTo(a_fire);
+		offReference->data.angle = a_fire->data.angle;
+		offReference->refScale = a_fire->refScale;
+		auto* vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
+		auto* handlePolicy = vm->GetObjectHandlePolicy();
+		RE::VMHandle handle = handlePolicy->GetHandleForObject(offReference->GetFormType(), offReference);
+		if (!handle) {
+			this->ManipulateFireRegistry(a_fire, false);
+			offReference->Disable();
+			offReference->DeleteThis();
+			return;
+		}
+		if (!vm->attachedScripts.contains(handle)) {
+			this->ManipulateFireRegistry(a_fire, false);
+			offReference->Disable();
+			offReference->DeleteThis();
+			return;
+		}
+
+		bool success = false;
+
+		for (auto& foundScript : vm->attachedScripts.find(handle)->second) {
+			if (foundScript->GetTypeInfo()->GetName() != "REF_ObjectRefOffController"sv) continue;
+			auto relatedFlame = foundScript->GetProperty("RelatedFlame");
+			auto addExtProperty = foundScript->GetProperty("RelatedObjects");
+			auto dayAttached = foundScript->GetProperty("DayAttached");
+			if (!(relatedFlame && addExtProperty && relatedFlame)) {
+				continue;
+			}
+
+			RE::BSScript::PackValue(relatedFlame, a_fire);
+			RE::BSScript::PackValue(addExtProperty, additionalExtinguishes);
+			RE::BSScript::PackValue(dayAttached, RE::Calendar::GetSingleton()->gameDay);
+			auto callback = RE::BSTSmartPointer<RE::BSScript::IStackCallbackFunctor>();
+			auto args = RE::MakeFunctionArguments();
+			const RE::BSFixedString functionName = "Extinguish"sv;
+			auto scriptObject = foundScript.get();
+			auto object = RE::BSTSmartPointer<RE::BSScript::Object>(scriptObject);
+			vm->DispatchMethodCall(object, functionName, args, callback);
+			success = true;
+			break;
+		}
+
+		if (!success) {
+			if (a_fire->IsDisabled()) {
+				a_fire->Enable(false);
+			}
+			offReference->Disable();
+			offReference->DeleteThis();
+			this->ManipulateFireRegistry(a_fire, false);
+			this->ManipulateFireRegistry(offReference, false);
+		}
 	}
 
 	void Papyrus::SetIsRaining(bool a_isRaining) {
@@ -263,13 +374,15 @@ namespace Papyrus {
 
 				auto* referenceBoundObject = a_ref ? a_ref->GetBaseObject() : nullptr;
 				auto* referenceBaseObject = referenceBoundObject ? referenceBoundObject->As<RE::TESForm>() : nullptr;
-				if (!referenceBaseObject) return RE::BSContainer::ForEachResult::kContinue;
-				if (CachedData::FireRegistry::GetSingleton()->IsManagedFire(a_ref)) {
+				if (!(referenceBaseObject && CachedData::FireRegistry::GetSingleton()->IsManagedFire(referenceBaseObject))) {
 					return RE::BSContainer::ForEachResult::kContinue;
 				}
 
 				CachedData::FireData fireData = CachedData::FireRegistry::GetSingleton()->GetOffForm(referenceBaseObject);
-				Papyrus::Papyrus::GetSingleton()->ExtinguishFire(a_ref, fireData);
+				if (fireData.offVersion) {
+					_loggerInfo("Extinguish all: Extinguishing.");
+					Papyrus::Papyrus::GetSingleton()->ExtinguishFire(a_ref, fireData);
+				}
 				return RE::BSContainer::ForEachResult::kContinue;
 			});
 		}
@@ -279,9 +392,19 @@ namespace Papyrus {
 		Papyrus::GetSingleton()->SetIsRaining(a_isRaining);
 	}
 
+	bool FreezeFire(STATIC_ARGS, RE::TESObjectREFR* a_fire) {
+		return Papyrus::GetSingleton()->ManipulateFireRegistry(a_fire, true);
+	}
+
+	bool UnFreezeFire(STATIC_ARGS, RE::TESObjectREFR* a_fire) {
+		return Papyrus::GetSingleton()->ManipulateFireRegistry(a_fire, false);
+	}
+
 	void Bind(VM& a_vm) {
 		BIND(GetVersion);
 		BIND(ExtinguishAllLoadedFires);
+		BIND(FreezeFire);
+		BIND(UnFreezeFire);
 		BIND(SetRainingFlag);
 		BIND_EVENT(RegisterForAccurateWeatherChange, true);
 		BIND_EVENT(RegisterForPlayerCellChangeEvent, true);

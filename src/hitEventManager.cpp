@@ -81,10 +81,10 @@ namespace HitManager {
 		if (!(hitWeap || hitSpell)) return RE::BSEventNotifyControl::kContinue;
 
 		RE::TESForm* resultingFire = nullptr;
-		bool needsFire = false;
+		bool needsFire = true;
 		auto fireData = CachedData::FireRegistry::GetSingleton()->GetOffForm(hitBase);
 		resultingFire = fireData.offVersion;
-		if (resultingFire) needsFire = true;
+		if (resultingFire) needsFire = false;
 
 		bool goodToGo = false;
 		if (hitWeap && ValidWeaponHit(hitWeap, needsFire)) goodToGo = true;
