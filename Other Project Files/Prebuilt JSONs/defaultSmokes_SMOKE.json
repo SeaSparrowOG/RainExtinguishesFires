@@ -1,0 +1,12 @@
+{
+  "Smoke": [
+    {
+      "Source": "Skyrim.esm",
+      "IDs": [
+        "0xB09E4",
+        "0xB09ED",
+        "0xB93DB"
+      ]
+    }
+  ]
+}

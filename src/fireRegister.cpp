@@ -31,8 +31,8 @@ namespace SettingsReader {
 	bool IsValidSmokeJSON(Json::Value a_json) {
 		if (!a_json || a_json.empty()) return false;
 
-		Json::Value smokeData = a_json["Smokes"];
-		if (smokeData && !smokeData.isArray()) return false;
+		Json::Value smokeData = a_json["Smoke"];
+		if (!smokeData || !smokeData.isArray()) return false;
 
 		for (auto object : smokeData) {
 			if (!object.isObject()) return false;
@@ -188,17 +188,17 @@ namespace SettingsReader {
 
 				offFireData.offVersion = offForm;
 
-				_loggerInfo("        [Fire Data]");
-				_loggerInfo("            >Source: {}.", baseSource);
+				_loggerInfo("    [Fire Data]");
+				_loggerInfo("        >Source: {}.", baseSource);
 
 				std::string baseEDID = clib_util::editorID::get_editorID(litForm);
 				if (baseEDID.empty()) {
-					_loggerInfo("            >Base Fire: {} -> {}.", baseSource, baseFormIDstr);
-					_loggerInfo("            >Off Fire: {} -> {}.", offSource, offFormIDstr);
+					_loggerInfo("        >Base Fire: {} -> {}.", baseSource, baseFormIDstr);
+					_loggerInfo("        >Off Fire: {} -> {}.", offSource, offFormIDstr);
 				}
 				else {
-					_loggerInfo("            >Base Fire: {} -> {}.", baseSource, baseEDID);
-					_loggerInfo("            >Off Fire: {} -> {}.", offSource, clib_util::editorID::get_editorID(offForm));
+					_loggerInfo("        >Base Fire: {} -> {}.", baseSource, baseEDID);
+					_loggerInfo("        >Off Fire: {} -> {}.", offSource, clib_util::editorID::get_editorID(offForm));
 				}
 
 				if (dyndoldFound) {
@@ -225,12 +225,13 @@ namespace SettingsReader {
 		}
 		if (configPaths.empty()) return true;
 
+		_loggerInfo("    [Smoke Objects]");
 		for (auto& config : configPaths) {
 			std::ifstream rawJSON(config);
 			Json::Reader  JSONReader;
 			Json::Value   JSONFile;
 			JSONReader.parse(rawJSON, JSONFile);
-			if (!IsValidFireJSON(JSONFile)) continue;
+			if (!IsValidSmokeJSON(JSONFile)) continue;
 
 			for (auto smokeData : JSONFile["Smoke"]) {
 				std::string source = smokeData["Source"].asString();
@@ -245,10 +246,10 @@ namespace SettingsReader {
 
 					auto smokeEDID = clib_util::editorID::get_editorID(smokeForm);
 					if (smokeEDID.empty()) {
-						_loggerInfo("            >Registered smoke object: {} -> {}.", source, IDstr);
+						_loggerInfo("        >Registered smoke object: {} -> {}.", source, IDstr);
 					}
 					else {
-						_loggerInfo("            >Registered smoke object: {} -> {}.", source, smokeEDID);
+						_loggerInfo("        >Registered smoke object: {} -> {}.", source, smokeEDID);
 					}
 				}
 			}
@@ -316,7 +317,9 @@ namespace CachedData {
 
 	bool FireRegistry::RegisterSmokeObject(RE::TESForm* a_smoke) {
 		if (!a_smoke) return false;
+		if (this->smokeRegister.contains(a_smoke)) return false;
 		this->smokeRegister[a_smoke] = true;
+		this->storedSmoke.push_back(a_smoke);
 		return true;
 	}
 
