@@ -289,6 +289,11 @@ namespace CachedData {
 		return false;
 	}
 
+	bool FireRegistry::IsOffFire(RE::TESForm* a_offForm) {
+		if (this->reverseFireRegister.contains(a_offForm)) return true;
+		return false;
+	}
+
 	bool FireRegistry::IsDynDOLODFire(RE::TESForm* a_litFire) {
 		if (this->fireRegister.find(a_litFire) != this->fireRegister.end()) {
 			return this->fireRegister[a_litFire].dyndolodFire;

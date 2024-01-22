@@ -23,6 +23,7 @@ namespace CachedData {
 		float                     GetSmokeSearchDistance();
 		float                     GetLightSearchDistance();
 		float                     GetRequiredOffTime();
+		bool                      IsOffFire(RE::TESForm* a_offForm);
 		bool                      RegisterPair(RE::TESForm* a_lit, FireData a_fireData);
 		bool                      RegisterSmokeObject(RE::TESForm* a_smoke);
 		void                      SetLookupSmoke(bool a_value);
