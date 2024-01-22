@@ -68,8 +68,8 @@ namespace SettingsReader {
 
 	bool ShouldRebuildINI(CSimpleIniA* a_ini) {
 		const char* section = "General";
-		const char* keys[4] = { "bSquashLights", "bSquashSmoke", "fLightSearchRadius", "fSmokeSearchRadius" };
-		int sectionLength = 4;
+		const char* keys[5] = { "bSquashLights", "bSquashSmoke", "fLightSearchRadius", "fSmokeSearchRadius", "fDaysToReset"};
+		int sectionLength = 5;
 		std::list<CSimpleIniA::Entry> keyHolder;
 
 		a_ini->GetAllKeys(section, keyHolder);
@@ -101,6 +101,7 @@ namespace SettingsReader {
 			ini.SetBoolValue("General",   "bSquashSmoke", true, ";Disables the nearest found smoke object.");
 			ini.SetDoubleValue("General", "fLightSearchRadius", 300.0, ";The distance over which to search for the light.");
 			ini.SetDoubleValue("General", "fSmokeSearchRadius", 300.0, ";The distance over which to search for the smoke object.");
+			ini.SetDoubleValue("General", "fDaysToReset", 3.0, ";How long it will take for unlit fires to be re-lit.");
 			ini.SaveFile(f.c_str());
 		}
 
@@ -109,6 +110,7 @@ namespace SettingsReader {
 		settingsSingleton->SetLookupSmoke(ini.GetBoolValue("General", "bSquashSmoke", true));
 		settingsSingleton->SetLookupLightDistance(ini.GetDoubleValue("General", "fLightSearchRadius", 300.0));
 		settingsSingleton->SetLookupSmokeDistance(ini.GetDoubleValue("General", "fSmokeSearchRadius", 300.0));
+		settingsSingleton->SetRequiredOffTime(ini.GetDoubleValue("General", "fDaysToReset", 3.0));
 
 		std::filesystem::path custom{ "./Data/SKSE/Plugins/RainExtinguishesFires_custom.ini" };
 		if (!std::filesystem::exists(f)) {
@@ -133,6 +135,10 @@ namespace SettingsReader {
 
 		if (customINI.KeyExists("General", "fSmokeSearchRadius")) {
 			settingsSingleton->SetLookupSmokeDistance(customINI.GetDoubleValue("General", "fSmokeSearchRadius", 300.0));
+		}
+
+		if (customINI.KeyExists("General", "fDaysToReset")) {
+			settingsSingleton->SetLookupSmokeDistance(customINI.GetDoubleValue("General", "fDaysToReset", 3.0));
 		}
 		return true;
 	}
@@ -264,6 +270,8 @@ namespace CachedData {
 
 	float CachedData::FireRegistry::GetLightSearchDistance() { return this->lightLookupRadius; }
 
+	float CachedData::FireRegistry::GetRequiredOffTime() { return this->requiredOffTime; }
+
 	void FireRegistry::SetLookupSmoke(bool a_value) { this->lookupSmoke = a_value; }
 
 	void FireRegistry::SetLookupLight(bool a_value) { this->lookupLights = a_value; }
@@ -271,6 +279,8 @@ namespace CachedData {
 	void CachedData::FireRegistry::SetLookupSmokeDistance(float a_value) { this->smokeLookupRadius = a_value; }
 
 	void CachedData::FireRegistry::SetLookupLightDistance(float a_value) { this->lightLookupRadius = a_value; }
+
+	void CachedData::FireRegistry::SetRequiredOffTime(float a_value) { this->requiredOffTime = a_value; }
 
 	bool FireRegistry::IsManagedFire(RE::TESForm* a_litFire) {
 		if (this->fireRegister.contains(a_litFire)) return true;

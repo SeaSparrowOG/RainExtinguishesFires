@@ -51,7 +51,24 @@ namespace LoadManager {
 			}
 		}
 		else if (CachedData::FireRegistry::GetSingleton()->IsManagedFire(referenceBaseObject)) {
-			Papyrus::Papyrus::GetSingleton()->RelightFire(eventReference);
+			//In order to relight, we must check that the fire has been out for "long enough".
+			auto* vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
+			auto* handlePolicy = vm->GetObjectHandlePolicy();
+			RE::VMHandle handle = handlePolicy->GetHandleForObject(eventReference->GetFormType(), eventReference);
+
+			for (auto& foundScript : vm->attachedScripts.find(handle)->second) {
+				if (foundScript->GetTypeInfo()->GetName() != "REF_ObjectRefOffController"sv) continue;
+				auto dayAttachedProperty = foundScript->GetProperty("DayAttached");
+				if (!dayAttachedProperty) continue;
+
+				float dayAttachedValue = RE::BSScript::UnpackValue<float>(dayAttachedProperty);
+				auto currentDay = RE::Calendar::GetSingleton()->gameDaysPassed->value;
+
+				if (CachedData::FireRegistry::GetSingleton()->GetRequiredOffTime() < currentDay - dayAttachedValue) {
+					Papyrus::Papyrus::GetSingleton()->RelightFire(eventReference);
+				}
+				break;
+			}
 		}
 		return continueEvent;
 	}
@@ -77,14 +94,14 @@ namespace LoadManager {
 			if (!this->wasInInterior) {
 				Papyrus::Papyrus::GetSingleton()->SendPlayerChangedInteriorExterior(false);
 			}
-			this->wasInInterior = false;
+			this->wasInInterior = true;
 		}
 		else {
 			//Moved from interior to exterior.
 			if (this->wasInInterior) {
 				Papyrus::Papyrus::GetSingleton()->SendPlayerChangedInteriorExterior(true);
 			}
-			this->wasInInterior = true;
+			this->wasInInterior = false;
 		}
 		return continueEvent;
 	}

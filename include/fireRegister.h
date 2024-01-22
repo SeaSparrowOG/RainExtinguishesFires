@@ -22,17 +22,21 @@ namespace CachedData {
 		std::vector<RE::TESForm*> GetStoredSmokeObjects();
 		float                     GetSmokeSearchDistance();
 		float                     GetLightSearchDistance();
+		float                     GetRequiredOffTime();
 		bool                      RegisterPair(RE::TESForm* a_lit, FireData a_fireData);
 		bool                      RegisterSmokeObject(RE::TESForm* a_smoke);
 		void                      SetLookupSmoke(bool a_value);
 		void                      SetLookupLight(bool a_value);
 		void                      SetLookupSmokeDistance(float a_value);
 		void                      SetLookupLightDistance(float a_value);
+		void                      SetRequiredOffTime(float a_value);
+
 	private:
 		bool                                       calculateOcclusion;
 		bool                                       lookupLights;
 		bool                                       lookupSmoke;
 		float                                      lightLookupRadius;
+		float                                      requiredOffTime;
 		float                                      smokeLookupRadius;
 		std::vector<RE::TESForm*>                  storedSmoke;
 		std::unordered_map<RE::TESForm*, bool>     smokeRegister;

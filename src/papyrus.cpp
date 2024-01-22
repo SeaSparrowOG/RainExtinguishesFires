@@ -307,7 +307,7 @@ namespace Papyrus {
 
 			RE::BSScript::PackValue(relatedFlame, a_fire);
 			RE::BSScript::PackValue(addExtProperty, additionalExtinguishes);
-			RE::BSScript::PackValue(dayAttached, RE::Calendar::GetSingleton()->gameDay);
+			dayAttached->SetFloat(RE::Calendar::GetSingleton()->GetDaysPassed());
 			auto callback = RE::BSTSmartPointer<RE::BSScript::IStackCallbackFunctor>();
 			auto args = RE::MakeFunctionArguments();
 			const RE::BSFixedString functionName = "Extinguish"sv;
