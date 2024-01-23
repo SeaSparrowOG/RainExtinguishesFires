@@ -98,7 +98,9 @@ namespace Papyrus {
 
 		auto fireBound = a_fire->GetBaseObject();
 		auto* fireBase = fireBound ? fireBound->As<RE::TESForm>() : nullptr;
-		if (!(fireBase && CachedData::FireRegistry::GetSingleton()->IsManagedFire(fireBase))) return false;
+		if (!fireBase) return false;
+		if (CachedData::FireRegistry::GetSingleton()->IsOffFire(fireBase)) return false;
+		if (CachedData::FireRegistry::GetSingleton()->IsOnFire(fireBase)) return false;
 
 		if (a_add) {
 			if (this->frozenFiresRegister.contains(a_fire)) return false;
@@ -118,7 +120,7 @@ namespace Papyrus {
 		auto baseBound = a_litFire->GetBaseObject();
 		auto* baseForm = baseBound ? baseBound->As<RE::TESForm>() : nullptr;
 		if (!baseForm) return;
-		if (!CachedData::FireRegistry::GetSingleton()->IsManagedFire(baseForm)) return;
+		if (!CachedData::FireRegistry::GetSingleton()->IsOffFire(baseForm)) return;
 		if (!this->ManipulateFireRegistry(a_litFire, true)) return;
 
 		auto* vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
@@ -375,7 +377,7 @@ namespace Papyrus {
 
 				auto* referenceBoundObject = a_ref ? a_ref->GetBaseObject() : nullptr;
 				auto* referenceBaseObject = referenceBoundObject ? referenceBoundObject->As<RE::TESForm>() : nullptr;
-				if (!(referenceBaseObject && CachedData::FireRegistry::GetSingleton()->IsManagedFire(referenceBaseObject))) {
+				if (!(referenceBaseObject && CachedData::FireRegistry::GetSingleton()->IsOnFire(referenceBaseObject))) {
 					return RE::BSContainer::ForEachResult::kContinue;
 				}
 

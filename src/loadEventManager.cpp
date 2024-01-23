@@ -43,15 +43,15 @@ namespace LoadManager {
 		auto* referenceBaseObject = referenceBoundObject ? referenceBoundObject->As<RE::TESForm>() : nullptr;
 		if (!referenceBaseObject) return continueEvent;
 
-		auto offVersion = CachedData::FireRegistry::GetSingleton()->GetOffForm(referenceBaseObject);
-		if (offVersion.offVersion) {
+		if (CachedData::FireRegistry::GetSingleton()->IsOnFire(referenceBaseObject)) {
 			auto* papyrusSingleton = Papyrus::Papyrus::GetSingleton();
-			if (papyrusSingleton->IsRaining()) {
-				Papyrus::Papyrus::GetSingleton()->ExtinguishFire(eventReference, offVersion);
-			}
+			auto offVersion = CachedData::FireRegistry::GetSingleton()->GetOffForm(referenceBaseObject);
+			if (!offVersion.offVersion) return continueEvent;
+			if (!papyrusSingleton->IsRaining()) return continueEvent;
+
+			papyrusSingleton->ExtinguishFire(eventReference, offVersion);
 		}
-		else if (CachedData::FireRegistry::GetSingleton()->IsManagedFire(referenceBaseObject)) {
-			//In order to relight, we must check that the fire has been out for "long enough".
+		else if (CachedData::FireRegistry::GetSingleton()->IsOffFire(referenceBaseObject)) {
 			auto* vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
 			auto* handlePolicy = vm->GetObjectHandlePolicy();
 			RE::VMHandle handle = handlePolicy->GetHandleForObject(eventReference->GetFormType(), eventReference);

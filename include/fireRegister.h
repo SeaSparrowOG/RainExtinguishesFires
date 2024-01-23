@@ -12,8 +12,8 @@ namespace CachedData {
 	class FireRegistry : public ISingleton<FireRegistry> {
 	public:
 		bool                      BuildRegistry();
-		bool                      IsValidSmoke(RE::TESForm* a_smoke);
-		bool                      IsManagedFire(RE::TESForm* a_litFire);
+		bool                      IsOffFire(RE::TESForm* a_offForm);
+		bool                      IsOnFire(RE::TESForm* a_offForm);
 		bool                      IsDynDOLODFire(RE::TESForm* a_litFire);
 		bool                      GetCheckOcclusion();
 		bool                      GetCheckLights();
@@ -23,7 +23,6 @@ namespace CachedData {
 		float                     GetSmokeSearchDistance();
 		float                     GetLightSearchDistance();
 		float                     GetRequiredOffTime();
-		bool                      IsOffFire(RE::TESForm* a_offForm);
 		bool                      RegisterPair(RE::TESForm* a_lit, FireData a_fireData);
 		bool                      RegisterSmokeObject(RE::TESForm* a_smoke);
 		void                      SetLookupSmoke(bool a_value);

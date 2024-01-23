@@ -283,9 +283,8 @@ namespace CachedData {
 
 	void CachedData::FireRegistry::SetRequiredOffTime(float a_value) { this->requiredOffTime = a_value; }
 
-	bool FireRegistry::IsManagedFire(RE::TESForm* a_litFire) {
+	bool FireRegistry::IsOnFire(RE::TESForm* a_litFire) {
 		if (this->fireRegister.contains(a_litFire)) return true;
-		if (this->reverseFireRegister.contains(a_litFire)) return true;
 		return false;
 	}
 
@@ -299,11 +298,6 @@ namespace CachedData {
 			return this->fireRegister[a_litFire].dyndolodFire;
 		}
 		return false;
-	}
-
-	bool FireRegistry::IsValidSmoke(RE::TESForm* a_smoke) { 
-		if (this->smokeRegister.find(a_smoke) != this->smokeRegister.end()) return true;
-		return false; 
 	}
 
 	FireData FireRegistry::GetOffForm(RE::TESForm* a_litFire) {
