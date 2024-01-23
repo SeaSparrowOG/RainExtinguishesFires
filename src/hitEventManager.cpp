@@ -1,4 +1,5 @@
 #include "hitManager.h"
+#include "eventDispenser.h"
 #include "fireRegister.h"
 #include "papyrus.h"
 
@@ -94,10 +95,10 @@ namespace HitManager {
 		}
 
 		if (needsFire) {
-			Papyrus::Papyrus::GetSingleton()->RelightFire(hitRef);
+			Events::Papyrus::GetSingleton()->RelightFire(hitRef);
 		}
 		else {
-			Papyrus::Papyrus::GetSingleton()->ExtinguishFire(hitRef, fireData);
+			Events::Papyrus::GetSingleton()->ExtinguishFire(hitRef, fireData);
 		}
 		return RE::BSEventNotifyControl::kContinue;
 	}

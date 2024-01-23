@@ -1,5 +1,6 @@
 #include <spdlog/sinks/basic_file_sink.h>
 
+#include "eventDispenser.h"
 #include "fireRegister.h"
 #include "hitManager.h"
 #include "hooks.h"
@@ -77,7 +78,16 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
             _loggerInfo("Error(s) occured while preparing the plugin. Loading stopped.");
             LoadManager::LoadManager::GetSingleton()->UnRegisterListener();
             HitManager::HitManager::GetSingleton()->UnRegisterListener();
-            Papyrus::Papyrus::GetSingleton()->DisablePapyrus();
+            Events::Papyrus::GetSingleton()->DisablePapyrus();
+        }
+        break;
+    }
+    case SKSE::MessagingInterface::kNewGame:
+    case SKSE::MessagingInterface::kPostLoadGame: {
+        if (Events::Papyrus::GetSingleton()->IsRaining()) {
+            _loggerInfo("Extinguishing all fire on load");
+            Events::Papyrus::GetSingleton()->SetIsRaining(true);
+            Events::Papyrus::GetSingleton()->ExtinguishAllFires();
         }
         break;
     }

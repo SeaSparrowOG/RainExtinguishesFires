@@ -1,9 +1,10 @@
 #include "hooks.h"
+#include "eventDispenser.h"
 #include "papyrus.h"
 
 namespace Hooks {
 	void QueueWeatherChange(RE::TESWeather* a_currentWeather) { 
-		Papyrus::Papyrus::GetSingleton()->SendWeatherChange(a_currentWeather);
+		Events::Papyrus::GetSingleton()->SendWeatherChange(a_currentWeather);
 	}
 	void Install() {
 		REL::Relocation<std::uintptr_t> target{ RELOCATION_ID(25684, 26231), OFFSET(0x44F, 0x46C) };

@@ -187,18 +187,12 @@ namespace SettingsReader {
 				if (!litForm || !offForm) continue;
 
 				offFireData.offVersion = offForm;
-
-				_loggerInfo("    [Fire Data]");
-				_loggerInfo("        >Source: {}.", baseSource);
-
 				std::string baseEDID = clib_util::editorID::get_editorID(litForm);
 				if (baseEDID.empty()) {
-					_loggerInfo("        >Base Fire: {} -> {}.", baseSource, baseFormIDstr);
-					_loggerInfo("        >Off Fire: {} -> {}.", offSource, offFormIDstr);
+					_loggerInfo("        >Registered Fire: {} -> {}.", baseFormIDstr, offFormIDstr);
 				}
 				else {
-					_loggerInfo("        >Base Fire: {} -> {}.", baseSource, baseEDID);
-					_loggerInfo("        >Off Fire: {} -> {}.", offSource, clib_util::editorID::get_editorID(offForm));
+					_loggerInfo("        >Registered Fire: {} -> {}.", clib_util::editorID::get_editorID(litForm), clib_util::editorID::get_editorID(offForm));
 				}
 
 				if (dyndoldFound) {
@@ -207,11 +201,12 @@ namespace SettingsReader {
 						auto* foundForm = RE::TESForm::LookupByEditorID(dyndolodEDID);
 
 						if (foundForm) {
-							_loggerInfo("            >Found DynDOLOD match: {}.", dyndolodEDID);
+							_loggerInfo("            >DynDOLOD match: {}.", dyndolodEDID);
 							offFireData.dyndolodFire = true;
 						}
 					}
 				}
+				
 				fireRegistry->RegisterPair(litForm, offFireData);
 			}
 		}

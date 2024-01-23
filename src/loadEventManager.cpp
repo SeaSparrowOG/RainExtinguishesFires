@@ -1,4 +1,5 @@
 #include "loadEventManager.h"
+#include "eventDispenser.h"
 #include "fireRegister.h"
 #include "papyrus.h"
 
@@ -44,7 +45,7 @@ namespace LoadManager {
 		if (!referenceBaseObject) return continueEvent;
 
 		if (CachedData::FireRegistry::GetSingleton()->IsOnFire(referenceBaseObject)) {
-			auto* papyrusSingleton = Papyrus::Papyrus::GetSingleton();
+			auto* papyrusSingleton = Events::Papyrus::GetSingleton();
 			auto offVersion = CachedData::FireRegistry::GetSingleton()->GetOffForm(referenceBaseObject);
 			if (!offVersion.offVersion) return continueEvent;
 			if (!papyrusSingleton->IsRaining()) return continueEvent;
@@ -56,7 +57,7 @@ namespace LoadManager {
 			auto* handlePolicy = vm->GetObjectHandlePolicy();
 			RE::VMHandle handle = handlePolicy->GetHandleForObject(eventReference->GetFormType(), eventReference);
 
-			if (!Papyrus::Papyrus::GetSingleton()->IsRaining()) {
+			if (!Events::Papyrus::GetSingleton()->IsRaining()) {
 				for (auto& foundScript : vm->attachedScripts.find(handle)->second) {
 					if (foundScript->GetTypeInfo()->GetName() != "REF_ObjectRefOffController"sv) continue;
 					auto dayAttachedProperty = foundScript->GetProperty("DayAttached");
@@ -66,7 +67,7 @@ namespace LoadManager {
 					auto currentDay = RE::Calendar::GetSingleton()->gameDaysPassed->value;
 
 					if (CachedData::FireRegistry::GetSingleton()->GetRequiredOffTime() < currentDay - dayAttachedValue) {
-						Papyrus::Papyrus::GetSingleton()->RelightFire(eventReference);
+						Events::Papyrus::GetSingleton()->RelightFire(eventReference);
 					}
 					break;
 				}
@@ -94,14 +95,14 @@ namespace LoadManager {
 		if (cell->IsInteriorCell()) {
 			//Moved from exterior to interior.
 			if (!this->wasInInterior) {
-				Papyrus::Papyrus::GetSingleton()->SendPlayerChangedInteriorExterior(false);
+				Events::Papyrus::GetSingleton()->SendPlayerChangedInteriorExterior(false);
 			}
 			this->wasInInterior = true;
 		}
 		else {
 			//Moved from interior to exterior.
 			if (this->wasInInterior) {
-				Papyrus::Papyrus::GetSingleton()->SendPlayerChangedInteriorExterior(true);
+				Events::Papyrus::GetSingleton()->SendPlayerChangedInteriorExterior(true);
 			}
 			this->wasInInterior = false;
 		}
