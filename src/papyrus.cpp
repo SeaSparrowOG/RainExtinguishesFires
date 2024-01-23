@@ -37,6 +37,7 @@ namespace Papyrus {
 
 				found = true;
 				response = a_ref;
+				lastDistance = currentDistance;
 				return RE::BSContainer::ForEachResult::kContinue;
 				});
 		}
@@ -380,7 +381,6 @@ namespace Papyrus {
 
 				CachedData::FireData fireData = CachedData::FireRegistry::GetSingleton()->GetOffForm(referenceBaseObject);
 				if (fireData.offVersion) {
-					_loggerInfo("Extinguish all: Extinguishing.");
 					Papyrus::Papyrus::GetSingleton()->ExtinguishFire(a_ref, fireData);
 				}
 				return RE::BSContainer::ForEachResult::kContinue;
