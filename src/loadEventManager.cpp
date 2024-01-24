@@ -55,12 +55,11 @@ namespace LoadManager {
 					if (CachedData::FireRegistry::GetSingleton()->IsOnFire(referenceBaseObject)) {
 						auto offVersion = CachedData::FireRegistry::GetSingleton()->GetOffForm(referenceBaseObject);
 						if (!offVersion.offVersion) {
-							continueContainer;
+							return continueContainer;
 						}
 						if (!isRaining) {
-							continueContainer;
+							return continueContainer;
 						}
-
 						papyrusSingleton->ExtinguishFire(a_ref, offVersion);
 					}
 					else if (CachedData::FireRegistry::GetSingleton()->IsOffFire(referenceBaseObject)) {

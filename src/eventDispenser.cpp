@@ -106,10 +106,14 @@ namespace Events {
 		}
 
 		if (!this->currentWeather) {
-			if (!skySingleton->currentWeather) return false;
+			if (!skySingleton->currentWeather) {
+				return false;
+			}
 			this->currentWeather = skySingleton->currentWeather;
 		}
-		if (!this->currentWeather) return false;
+		if (!this->currentWeather) {
+			return false;
+		}
 
 		float currentWeatherPct = RE::Sky::GetSingleton()->currentWeatherPct;
 		if (currentWeatherPct > 0.85f) {
