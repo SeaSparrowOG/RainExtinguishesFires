@@ -2,16 +2,7 @@
 
 namespace LoadManager {
 #define continueEvent RE::BSEventNotifyControl::kContinue
-
-	class LoadManager :
-		public RE::BSTEventSink<RE::TESCellAttachDetachEvent>,
-		public ISingleton<LoadManager> {
-	public:
-		bool RegisterListener();
-		bool UnRegisterListener();
-	private:
-		RE::BSEventNotifyControl ProcessEvent(const RE::TESCellAttachDetachEvent* a_event, RE::BSTEventSource<RE::TESCellAttachDetachEvent>* a_eventSource) override;
-	};
+#define continueContainer RE::BSContainer::ForEachResult::kContinue
 
 	class ActorCellManager :
 		public RE::BSTEventSink<RE::BGSActorCellEvent>,

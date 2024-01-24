@@ -4,81 +4,12 @@
 #include "papyrus.h"
 
 namespace LoadManager {
-	//Public - Register functions.
-	bool LoadManager::RegisterListener() {
-		auto* singleton = LoadManager::GetSingleton();
-		if (!singleton) return false;
-
-		RE::ScriptEventSourceHolder* eventHolder = RE::ScriptEventSourceHolder::GetSingleton();
-		if (!eventHolder) return false;
-
-		eventHolder->AddEventSink(singleton);
-		return true;
-	}
-
 	bool ActorCellManager::RegisterListener() {
 		auto* singleton = ActorCellManager::GetSingleton();
 		if (!singleton) return false;
 
 		RE::PlayerCharacter::GetSingleton()->AddEventSink(singleton);
 		return true;
-	}
-
-	bool LoadManager::UnRegisterListener() {
-		auto* singleton = LoadManager::GetSingleton();
-		if (!singleton) return false;
-
-		RE::ScriptEventSourceHolder::GetSingleton()->RemoveEventSink(singleton);
-		return true;
-	}
-
-	//Thing attached/detatched
-	RE::BSEventNotifyControl LoadManager::ProcessEvent(const RE::TESCellAttachDetachEvent* a_event, RE::BSTEventSource<RE::TESCellAttachDetachEvent>* a_eventSource) {
-		if (!(a_event && a_eventSource)) return continueEvent;
-		if (!a_event->attached) return continueEvent;
-		auto* playerParentCell = RE::PlayerCharacter::GetSingleton()->GetParentCell();
-		if (!playerParentCell || playerParentCell->IsInteriorCell()) return continueEvent;
-
-		auto* eventReferencePtr = &a_event->reference;
-		auto* eventReference = eventReferencePtr ? eventReferencePtr->get() : nullptr;
-		auto* referenceBoundObject = eventReference ? eventReference->GetBaseObject() : nullptr;
-		auto* referenceBaseObject = referenceBoundObject ? referenceBoundObject->As<RE::TESForm>() : nullptr;
-		if (!referenceBaseObject) return continueEvent;
-
-		if (CachedData::FireRegistry::GetSingleton()->IsOnFire(referenceBaseObject)) {
-			auto* papyrusSingleton = Events::Papyrus::GetSingleton();
-			auto offVersion = CachedData::FireRegistry::GetSingleton()->GetOffForm(referenceBaseObject);
-			if (!offVersion.offVersion) {
-				return continueEvent;
-			}
-			if (!papyrusSingleton->IsRaining()) {
-				return continueEvent;
-			}
-
-			papyrusSingleton->ExtinguishFire(eventReference, offVersion);
-		}
-		else if (CachedData::FireRegistry::GetSingleton()->IsOffFire(referenceBaseObject)) {
-			auto* vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
-			auto* handlePolicy = vm->GetObjectHandlePolicy();
-			RE::VMHandle handle = handlePolicy->GetHandleForObject(eventReference->GetFormType(), eventReference);
-
-			if (!Events::Papyrus::GetSingleton()->IsRaining()) {
-				for (auto& foundScript : vm->attachedScripts.find(handle)->second) {
-					if (foundScript->GetTypeInfo()->GetName() != "REF_ObjectRefOffController"sv) continue;
-					auto dayAttachedProperty = foundScript->GetProperty("DayAttached");
-					if (!dayAttachedProperty) continue;
-
-					float dayAttachedValue = RE::BSScript::UnpackValue<float>(dayAttachedProperty);
-					auto currentDay = RE::Calendar::GetSingleton()->gameDaysPassed->value;
-
-					if (CachedData::FireRegistry::GetSingleton()->GetRequiredOffTime() < currentDay - dayAttachedValue) {
-						Events::Papyrus::GetSingleton()->RelightFire(eventReference);
-					}
-					break;
-				}
-			}
-		}
-		return continueEvent;
 	}
 
 	//Process Event - Actor Cell
@@ -110,6 +41,53 @@ namespace LoadManager {
 				Events::Papyrus::GetSingleton()->SendPlayerChangedInteriorExterior(true);
 			}
 			this->wasInInterior = false;
+
+			auto* papyrusSingleton = Events::Papyrus::GetSingleton();
+			bool isRaining = Events::Papyrus::GetSingleton()->IsRaining();
+
+			if (const auto TES = RE::TES::GetSingleton(); TES) {
+				TES->ForEachReferenceInRange(RE::PlayerCharacter::GetSingleton()->AsReference(), 0.0f, [&](RE::TESObjectREFR* a_ref) {
+					if (!(a_ref && a_ref->Is3DLoaded())) return continueContainer;
+					auto* referenceBoundObject = a_ref ? a_ref->GetBaseObject() : nullptr;
+					auto* referenceBaseObject = referenceBoundObject ? referenceBoundObject->As<RE::TESForm>() : nullptr;
+					if (!referenceBaseObject) return continueContainer;
+
+					if (CachedData::FireRegistry::GetSingleton()->IsOnFire(referenceBaseObject)) {
+						auto offVersion = CachedData::FireRegistry::GetSingleton()->GetOffForm(referenceBaseObject);
+						if (!offVersion.offVersion) {
+							continueContainer;
+						}
+						if (!isRaining) {
+							continueContainer;
+						}
+
+						papyrusSingleton->ExtinguishFire(a_ref, offVersion);
+					}
+					else if (CachedData::FireRegistry::GetSingleton()->IsOffFire(referenceBaseObject)) {
+						auto* vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
+						auto* handlePolicy = vm ? vm->GetObjectHandlePolicy() : nullptr;
+						RE::VMHandle handle = handlePolicy ? handlePolicy->GetHandleForObject(a_ref->GetFormType(), a_ref) : RE::VMHandle();
+						
+
+						for (auto& foundScript : vm->attachedScripts.find(handle)->second) {
+							if (foundScript->GetTypeInfo()->GetName() != "REF_ObjectRefOffController"sv) continue;
+							auto* dayAttachedProperty = foundScript->GetProperty("DayAttached");
+							auto* relevantFireProperty = foundScript->GetProperty("RelatedFlame");
+							if (!(dayAttachedProperty && relevantFireProperty)) continue;
+
+							if (!isRaining) {
+								float dayAttachedValue = RE::BSScript::UnpackValue<float>(dayAttachedProperty);
+								auto currentDay = RE::Calendar::GetSingleton()->GetDaysPassed();
+								if (CachedData::FireRegistry::GetSingleton()->GetRequiredOffTime() < currentDay - dayAttachedValue) {
+									papyrusSingleton->RelightFire(a_ref);
+								}
+							}
+							break;
+						}
+					}
+					return continueContainer;
+					});
+			}
 		}
 		return continueEvent;
 	}

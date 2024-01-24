@@ -104,12 +104,17 @@ namespace Events {
 		if (!skySingleton) {
 			return false;
 		}
-		if (!skySingleton->currentWeather) return false;
+
+		if (!this->currentWeather) {
+			if (!skySingleton->currentWeather) return false;
+			this->currentWeather = skySingleton->currentWeather;
+		}
+		if (!this->currentWeather) return false;
 
 		float currentWeatherPct = RE::Sky::GetSingleton()->currentWeatherPct;
 		if (currentWeatherPct > 0.85f) {
-			if (skySingleton->currentWeather->data.flags & RE::TESWeather::WeatherDataFlag::kRainy
-				|| skySingleton->currentWeather->data.flags & RE::TESWeather::WeatherDataFlag::kSnow) {
+			if (this->currentWeather->data.flags & RE::TESWeather::WeatherDataFlag::kRainy
+				|| this->currentWeather->data.flags & RE::TESWeather::WeatherDataFlag::kSnow) {
 				this->isRaining = true;
 				return true;
 			}

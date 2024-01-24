@@ -27,21 +27,12 @@ void SetupLog() {
 void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 {
     bool unregisterAll = false;
-    bool registeredLoad = false;
     bool registeredChange = false;
     bool registeredHit = false;
     switch (a_message->type) {
     case SKSE::MessagingInterface::kDataLoaded:
         Hooks::Install();
         _loggerInfo("Hooked functions.");
-
-        if (!unregisterAll && LoadManager::LoadManager::GetSingleton()->RegisterListener()) {
-            _loggerInfo("Registered the Load/Unload manager.");
-            registeredLoad = true;
-        }
-        else {
-            unregisterAll = true;
-        }
 
         if (!unregisterAll && LoadManager::ActorCellManager::GetSingleton()->RegisterListener()) {
             _loggerInfo("Registered the Player manager.");
@@ -66,18 +57,22 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
             unregisterAll = true;
         }
 
-        if (CachedData::FireRegistry::GetSingleton()->BuildRegistry()) {
+        if (!unregisterAll && CachedData::FireRegistry::GetSingleton()->BuildRegistry()) {
             _loggerInfo("Built the cache system.");
         }
         else {
             unregisterAll = true;
         }
 
+        Events::Papyrus::GetSingleton()->SetIsRaining(false);
+
         if (unregisterAll) {
             _loggerInfo("Error(s) occured while preparing the plugin. Loading stopped.");
-            LoadManager::LoadManager::GetSingleton()->UnRegisterListener();
             HitManager::HitManager::GetSingleton()->UnRegisterListener();
             Events::Papyrus::GetSingleton()->DisablePapyrus();
+        }
+        else {
+            _loggerInfo("{} has finished loading, enjoy your game!", Version::PROJECT);
         }
         break;
     case SKSE::MessagingInterface::kNewGame:
