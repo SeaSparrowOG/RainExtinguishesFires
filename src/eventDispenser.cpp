@@ -16,7 +16,7 @@ namespace Events {
 	* @param a_radius The radius within which to search.
 	* @param a_type The type of reference to check. 31 is lights, 36 Moveable statics.
 	*/
-	RE::TESObjectREFR* GetNearestReferenceOfType(RE::TESObjectREFR* a_center, float a_radius, RE::FormType a_type, RE::TESForm* a_matchAgainst = nullptr) {
+	RE::TESObjectREFR* GetNearestReferenceOfType(RE::TESObjectREFR* a_center, float a_radius, RE::FormType a_type, bool a_matchStoredObjects) {
 		RE::TESObjectREFR* response = nullptr;
 		bool found = false;
 		float lastDistance = a_radius;
@@ -26,10 +26,15 @@ namespace Events {
 			TES->ForEachReferenceInRange(a_center, a_radius, [&](RE::TESObjectREFR* a_ref) {
 				const auto baseBound = a_ref->GetBaseObject();
 				if (!baseBound) return RE::BSContainer::ForEachResult::kContinue;
-				auto* baseForm = baseBound->As<RE::TESForm>();
-				if (!baseForm) return RE::BSContainer::ForEachResult::kContinue;
 				if (!baseBound->Is(a_type)) return RE::BSContainer::ForEachResult::kContinue;
-				if (a_matchAgainst && a_matchAgainst != baseForm) return RE::BSContainer::ForEachResult::kContinue;
+
+				if (a_matchStoredObjects) {
+					auto* baseForm = baseBound->As<RE::TESForm>();
+					if (!baseForm) return RE::BSContainer::ForEachResult::kContinue;
+					if (!CachedData::FireRegistry::GetSingleton()->IsValidObject(baseForm)) {
+						return RE::BSContainer::ForEachResult::kContinue;
+					}
+				}
 
 				auto lightLocation = a_ref->GetPosition();
 				float currentDistance = lightLocation.GetDistance(refLocation);
@@ -95,14 +100,20 @@ namespace Events {
 			return true;
 		}
 
-		auto* currentWeather = RE::Sky::GetSingleton()->currentWeather;
-		if (!(currentWeather->data.flags & RE::TESWeather::WeatherDataFlag::kRainy
-			|| currentWeather->data.flags & RE::TESWeather::WeatherDataFlag::kSnow)) {
+		auto* skySingleton = RE::Sky::GetSingleton();
+		if (!skySingleton) {
 			return false;
 		}
+		if (!skySingleton->currentWeather) return false;
 
 		float currentWeatherPct = RE::Sky::GetSingleton()->currentWeatherPct;
-		if (currentWeatherPct > 0.85f) return true;
+		if (currentWeatherPct > 0.85f) {
+			if (skySingleton->currentWeather->data.flags & RE::TESWeather::WeatherDataFlag::kRainy
+				|| skySingleton->currentWeather->data.flags & RE::TESWeather::WeatherDataFlag::kSnow) {
+				this->isRaining = true;
+				return true;
+			}
+		}
 		return false;
 	}
 
@@ -113,8 +124,9 @@ namespace Events {
 		auto fireBound = a_fire->GetBaseObject();
 		auto* fireBase = fireBound ? fireBound->As<RE::TESForm>() : nullptr;
 		if (!fireBase) return false;
-		if (CachedData::FireRegistry::GetSingleton()->IsOffFire(fireBase)) return false;
-		if (CachedData::FireRegistry::GetSingleton()->IsOnFire(fireBase)) return false;
+
+		bool foundMatch = CachedData::FireRegistry::GetSingleton()->IsOffFire(fireBase);
+		if (!foundMatch && !CachedData::FireRegistry::GetSingleton()->IsOnFire(fireBase)) return false;
 
 		if (a_add) {
 			if (this->frozenFiresRegister.contains(a_fire)) return false;
@@ -178,15 +190,13 @@ namespace Events {
 		if (playerCell->IsInteriorCell()) return;
 
 		bool bWasRaining = false;
-		if (a_weather == currentWeather) {
-			bWasRaining = false;
-		}
 
-		if (!bWasRaining || currentWeather->data.flags & RE::TESWeather::WeatherDataFlag::kRainy
-			|| currentWeather->data.flags & RE::TESWeather::WeatherDataFlag::kSnow) {
-			bWasRaining = true;
+		if (currentWeather) {
+			if (currentWeather->data.flags & RE::TESWeather::WeatherDataFlag::kRainy
+				|| currentWeather->data.flags & RE::TESWeather::WeatherDataFlag::kSnow) {
+				bWasRaining = true;
+			}
 		}
-
 		bool bIsRaining = false;
 
 		if (a_weather->data.flags & RE::TESWeather::WeatherDataFlag::kRainy
@@ -227,10 +237,8 @@ namespace Events {
 	void Papyrus::ExtinguishFire(RE::TESObjectREFR* a_fire, CachedData::FireData a_data) {
 		if (this->disable) return;
 		if (this->frozenFiresRegister.contains(a_fire)) return;
-
 		auto* offForm = a_data.offVersion;
 		if (!offForm) return;
-
 		std::vector<RE::TESObjectREFR*> additionalExtinguishes = std::vector<RE::TESObjectREFR*>();
 
 		auto* referenceExtraList = &a_fire->extraList;
@@ -254,27 +262,24 @@ namespace Events {
 			this->ManipulateFireRegistry(a_fire, false);
 			return;
 		}
-
 		if (!this->ManipulateFireRegistry(a_fire, true)) return;
+
 		auto settingsSingleton = CachedData::FireRegistry::GetSingleton();
-		std::vector<RE::TESForm*> validSmoke = settingsSingleton->GetStoredSmokeObjects();
 
 		if (settingsSingleton->GetCheckOcclusion()) {
 			//TODO: Include this.
 		}
 
 		if (settingsSingleton->GetCheckLights()) {
-			auto foundLight = GetNearestReferenceOfType(a_fire, settingsSingleton->GetLightSearchDistance(), RE::FormType::Light);
+			auto foundLight = GetNearestReferenceOfType(a_fire, settingsSingleton->GetLightSearchDistance(), RE::FormType::Light, false);
 			if (foundLight) {
 				additionalExtinguishes.push_back(foundLight);
 			}
 		}
 
 		if (settingsSingleton->GetCheckSmoke()) {
-			for (auto* smokeObject : validSmoke) {
-				auto foundSmoke = GetNearestReferenceOfType(a_fire, settingsSingleton->GetSmokeSearchDistance(), RE::FormType::MovableStatic, smokeObject);
-				if (foundSmoke) additionalExtinguishes.push_back(foundSmoke);
-			}
+			auto foundSmoke = GetNearestReferenceOfType(a_fire, settingsSingleton->GetSmokeSearchDistance(), RE::FormType::MovableStatic, true);
+			if (foundSmoke) additionalExtinguishes.push_back(foundSmoke);
 		}
 
 		if (dyndolodFire) {
@@ -295,7 +300,7 @@ namespace Events {
 		this->ManipulateFireRegistry(offReference, true);
 		offReference->MoveTo(a_fire);
 		offReference->data.angle = a_fire->data.angle;
-		offReference->refScale = a_fire->refScale * 0.99f;
+		offReference->refScale = a_fire->refScale;
 		auto* vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
 		auto* handlePolicy = vm->GetObjectHandlePolicy();
 		RE::VMHandle handle = handlePolicy->GetHandleForObject(offReference->GetFormType(), offReference);

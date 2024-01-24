@@ -15,6 +15,7 @@ namespace CachedData {
 		bool                      IsOffFire(RE::TESForm* a_offForm);
 		bool                      IsOnFire(RE::TESForm* a_offForm);
 		bool                      IsDynDOLODFire(RE::TESForm* a_litFire);
+		bool                      IsValidObject(RE::TESForm* a_form);
 		bool                      GetCheckOcclusion();
 		bool                      GetCheckLights();
 		bool                      GetCheckSmoke();

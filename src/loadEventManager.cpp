@@ -32,6 +32,7 @@ namespace LoadManager {
 		return true;
 	}
 
+	//Thing attached/detatched
 	RE::BSEventNotifyControl LoadManager::ProcessEvent(const RE::TESCellAttachDetachEvent* a_event, RE::BSTEventSource<RE::TESCellAttachDetachEvent>* a_eventSource) {
 		if (!(a_event && a_eventSource)) return continueEvent;
 		if (!a_event->attached) return continueEvent;
@@ -47,8 +48,12 @@ namespace LoadManager {
 		if (CachedData::FireRegistry::GetSingleton()->IsOnFire(referenceBaseObject)) {
 			auto* papyrusSingleton = Events::Papyrus::GetSingleton();
 			auto offVersion = CachedData::FireRegistry::GetSingleton()->GetOffForm(referenceBaseObject);
-			if (!offVersion.offVersion) return continueEvent;
-			if (!papyrusSingleton->IsRaining()) return continueEvent;
+			if (!offVersion.offVersion) {
+				return continueEvent;
+			}
+			if (!papyrusSingleton->IsRaining()) {
+				return continueEvent;
+			}
 
 			papyrusSingleton->ExtinguishFire(eventReference, offVersion);
 		}

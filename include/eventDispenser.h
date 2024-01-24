@@ -19,7 +19,7 @@ namespace Events {
 		void DisablePapyrus();
 
 	private:
-		bool disable = false;
+		bool disable;
 		/**
 		* Event called when the weather changes.
 		* @param bool True if raining.

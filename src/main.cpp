@@ -26,13 +26,12 @@ void SetupLog() {
 
 void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 {
+    bool unregisterAll = false;
+    bool registeredLoad = false;
+    bool registeredChange = false;
+    bool registeredHit = false;
     switch (a_message->type) {
-    case SKSE::MessagingInterface::kDataLoaded: {
-        bool unregisterAll = false;
-        bool registeredLoad = false;
-        bool registeredChange = false;
-        bool registeredHit = false;
-
+    case SKSE::MessagingInterface::kDataLoaded:
         Hooks::Install();
         _loggerInfo("Hooked functions.");
 
@@ -81,16 +80,13 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
             Events::Papyrus::GetSingleton()->DisablePapyrus();
         }
         break;
-    }
     case SKSE::MessagingInterface::kNewGame:
-    case SKSE::MessagingInterface::kPostLoadGame: {
+    case SKSE::MessagingInterface::kPostLoadGame:
         if (Events::Papyrus::GetSingleton()->IsRaining()) {
-            _loggerInfo("Extinguishing all fire on load");
             Events::Papyrus::GetSingleton()->SetIsRaining(true);
             Events::Papyrus::GetSingleton()->ExtinguishAllFires();
         }
         break;
-    }
     default:
         break;
     }

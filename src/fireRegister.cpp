@@ -44,6 +44,8 @@ namespace SettingsReader {
 				if (!id.isString()) return false;
 			}
 		}
+
+		return true;
 	}
 
 	bool IsValidFireJSON(Json::Value a_json) {
@@ -279,20 +281,23 @@ namespace CachedData {
 	void CachedData::FireRegistry::SetRequiredOffTime(float a_value) { this->requiredOffTime = a_value; }
 
 	bool FireRegistry::IsOnFire(RE::TESForm* a_litFire) {
-		if (this->fireRegister.contains(a_litFire)) return true;
-		return false;
+		return this->fireRegister.contains(a_litFire);
 	}
 
 	bool FireRegistry::IsOffFire(RE::TESForm* a_offForm) {
-		if (this->reverseFireRegister.contains(a_offForm)) return true;
-		return false;
+		return this->reverseFireRegister.contains(a_offForm);
 	}
 
 	bool FireRegistry::IsDynDOLODFire(RE::TESForm* a_litFire) {
-		if (this->fireRegister.find(a_litFire) != this->fireRegister.end()) {
+		if (this->fireRegister.contains(a_litFire)) {
 			return this->fireRegister[a_litFire].dyndolodFire;
 		}
 		return false;
+	}
+
+	bool CachedData::FireRegistry::IsValidObject(RE::TESForm* a_form) {
+		if (!a_form) return false;
+		return this->smokeRegister.contains(a_form);
 	}
 
 	FireData FireRegistry::GetOffForm(RE::TESForm* a_litFire) {
