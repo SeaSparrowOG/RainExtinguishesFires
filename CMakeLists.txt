@@ -20,14 +20,9 @@ endmacro()
 macro(find_commonlib_path)
 	if(CommonLibName AND NOT ${CommonLibName} STREQUAL "")
 
-		if(SUPPORT_LATEST OR SUPPORT_VR) 
-			find_path(CommonLibPath
-				include/REL/Relocation.h 
-				PATHS extern/${CommonLibName})
-		else()
-			set_from_environment(${CommonLibName}PO3Old)
-			set(CommonLibPath ${${CommonLibName}PO3Old})
-		endif()
+		find_path(CommonLibPath
+			include/REL/Relocation.h 
+			PATHS extern/${CommonLibName})
 	endif()
 endmacro()
 
@@ -36,6 +31,11 @@ set_from_environment(VCPKG_ROOT)
 if(BUILD_SKYRIMAE) 
 	add_compile_definitions(SKYRIM_AE)
 	add_compile_definitions(SKYRIM_SUPPORT_AE)
+
+	if(NOT SUPPORT_LATEST)
+		add_compile_definitions(SUPPORT_OLD_VERSIONS)
+	endif()
+
 	set(CommonLibName "CommonLibSSE")
 	set_from_environment(SkyrimAEPath)
 	set(SkyrimPath ${SkyrimAEPath})
@@ -237,10 +237,10 @@ endif ()
 # ---- Post build ----
 if(DEFINED ENV{SKYRIM_MODS_FOLDER} AND IS_DIRECTORY "$ENV{SKYRIM_MODS_FOLDER}")
 	if(BUILD_SKYRIMAE)
-		if (SUPPORT_PRE1130)
-			set(OUTPUT_FOLDER "$ENV{SKYRIM_MODS_FOLDER}/${PROJECT_NAME} - 640")
+		if (SUPPORT_LATEST)
+			set(OUTPUT_FOLDER "$ENV{SKYRIM_MODS_FOLDER}/${PROJECT_NAME} - Latest")
 		else()
-			set(OUTPUT_FOLDER "$ENV{SKYRIM_MODS_FOLDER}/${PROJECT_NAME} - 1130")
+			set(OUTPUT_FOLDER "$ENV{SKYRIM_MODS_FOLDER}/${PROJECT_NAME} - 640")
 		endif()
 	else() 
 		set(OUTPUT_FOLDER "$ENV{SKYRIM_MODS_FOLDER}/${PROJECT_NAME} - 97")

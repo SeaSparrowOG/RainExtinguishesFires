@@ -173,6 +173,7 @@ namespace SettingsReader {
 			}
 
 			auto fireData = JSONFile["Fires"];
+			_loggerInfo("    [Fire Data]");
 			for (auto& fire : fireData) {
 				CachedData::FireData offFireData = CachedData::FireData();
 				auto baseSource = fire["Source"].asString();
@@ -186,7 +187,7 @@ namespace SettingsReader {
 
 				auto* litForm = RE::TESDataHandler::GetSingleton()->LookupForm(baseFormID, baseSource);
 				auto* offForm = RE::TESDataHandler::GetSingleton()->LookupForm(offFormID, offSource);
-				if (!litForm || !offForm) continue;
+				if (!(litForm && offForm)) continue;
 
 				offFireData.offVersion = offForm;
 				std::string baseEDID = clib_util::editorID::get_editorID(litForm);
@@ -222,7 +223,7 @@ namespace SettingsReader {
 		}
 		if (configPaths.empty()) return true;
 
-		_loggerInfo("    [Smoke Objects]");
+		_loggerInfo("    [Smoke Data]");
 		for (auto& config : configPaths) {
 			std::ifstream rawJSON(config);
 			Json::Reader  JSONReader;

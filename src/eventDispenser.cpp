@@ -24,7 +24,7 @@ namespace Events {
 
 		if (const auto TES = RE::TES::GetSingleton(); TES) {
 			TES->ForEachReferenceInRange(a_center, a_radius, [&](RE::TESObjectREFR* a_ref) {
-				const auto baseBound = a_ref->GetBaseObject();
+				const auto baseBound = a_ref ? a_ref->GetBaseObject() : nullptr;
 				if (!baseBound) return RE::BSContainer::ForEachResult::kContinue;
 				if (!baseBound->Is(a_type)) return RE::BSContainer::ForEachResult::kContinue;
 
@@ -57,9 +57,8 @@ namespace Events {
 		RE::TESObjectREFR* response = nullptr;
 		if (const auto TES = RE::TES::GetSingleton(); TES) {
 			auto centerLocation = a_center->data.location;
-
 			TES->ForEachReferenceInRange(a_center, a_radius, [&](RE::TESObjectREFR* a_ref) {
-				auto* baseBound = a_ref->GetBaseObject();
+				auto* baseBound = a_ref ? a_ref->GetBaseObject() : nullptr;
 				if (!baseBound) return RE::BSContainer::ForEachResult::kContinue;
 
 				if (clib_util::editorID::get_editorID(baseBound->As<RE::TESForm>()).contains(a_name)) {

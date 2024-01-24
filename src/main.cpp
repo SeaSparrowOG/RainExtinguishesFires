@@ -31,6 +31,11 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
     bool registeredHit = false;
     switch (a_message->type) {
     case SKSE::MessagingInterface::kDataLoaded:
+        if (!RE::TESDataHandler::GetSingleton()->LookupLoadedLightModByName("RainExtinguishesFires.esp"sv)) {
+            SKSE::log::critical("FATAL: RainExtinguishesFires.esp is not active in the load order. Aborting load.");
+            SKSE::stl::report_and_fail("FATAL: RainExtinguishesFires.esp is not active in the load order. Aborting load.");
+            break;
+        }
         Hooks::Install();
         _loggerInfo("Hooked functions.");
 
@@ -96,15 +101,14 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
     v.UsesAddressLibrary();
     v.UsesUpdatedStructs();
 
-#ifdef SUPPORT_OLDER_VERSION
+#ifdef SUPPORT_OLD_VERSIONS
     v.CompatibleVersions({ 
         SKSE::RUNTIME_1_6_659, 
-        SKSE::RUNTIME_1_6_640, 
-        SKSE::RUNTIME_1_6_629 });
+        SKSE::RUNTIME_1_6_640 });
 #else
     v.CompatibleVersions({ 
         SKSE::RUNTIME_1_6_1130, 
-        _1_6_1170 });
+        SKSE::RUNTIME_LATEST });
 #endif
 
     return v;
@@ -139,8 +143,8 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a_
     _loggerInfo("Version build:");
 
 #ifdef SKYRIM_AE
-#ifdef SUPPORT_OLDER_VERSION
-    _loggerInfo("    >Pre-1.6.1130 Version.");
+#ifdef SUPPORT_OLD_VERSIONS
+    _loggerInfo("    >1.6.640 -> 1.6.659 Version.");
 #else 
     _loggerInfo("    >Latest Version.");
 #endif
