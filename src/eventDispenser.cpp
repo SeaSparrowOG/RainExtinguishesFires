@@ -308,11 +308,7 @@ namespace Events {
 		this->ManipulateFireRegistry(offReference, true);
 		offReference->MoveTo(a_fire);
 		offReference->data.angle = a_fire->data.angle;
-#ifdef BUILD_NG
-		offReference->GetReferenceRuntimeData().refScale = a_fire->GetReferenceRuntimeData().refScale;
-#else
 		offReference->refScale = a_fire->refScale;
-#endif
 		auto* vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
 		auto* handlePolicy = vm->GetObjectHandlePolicy();
 		RE::VMHandle handle = handlePolicy->GetHandleForObject(offReference->GetFormType(), offReference);
