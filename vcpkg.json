@@ -12,7 +12,9 @@
     "spdlog",
     "xbyak",
     "clib-util",
-    "jsoncpp"
+    "jsoncpp",
+    "catch2",
+    "rapidcsv"
   ],
   "overrides": [
     {

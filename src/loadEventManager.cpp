@@ -7,8 +7,11 @@ namespace LoadManager {
 	bool ActorCellManager::RegisterListener() {
 		auto* singleton = ActorCellManager::GetSingleton();
 		if (!singleton) return false;
-
+#ifdef BUILD_NG
+		RE::PlayerCharacter::GetSingleton()->AsBGSActorCellEventSource()->AddEventSink(singleton);
+#else
 		RE::PlayerCharacter::GetSingleton()->AddEventSink(singleton);
+#endif
 		return true;
 	}
 
@@ -46,7 +49,12 @@ namespace LoadManager {
 			bool isRaining = Events::Papyrus::GetSingleton()->IsRaining();
 
 			if (const auto TES = RE::TES::GetSingleton(); TES) {
-				TES->ForEachReferenceInRange(RE::PlayerCharacter::GetSingleton()->AsReference(), 0.0f, [&](RE::TESObjectREFR* a_ref) {
+#ifdef BUILD_NG
+				TES->ForEachReferenceInRange(RE::PlayerCharacter::GetSingleton()->AsReference(), 0.0, [&](RE::TESObjectREFR& a_workaround) {
+					auto* a_ref = &a_workaround;
+#else
+				TES->ForEachReferenceInRange(RE::PlayerCharacter::GetSingleton()->AsReference(), 0.0, [&](RE::TESObjectREFR* a_ref) {
+#endif
 					if (!(a_ref && a_ref->Is3DLoaded())) return continueContainer;
 					auto* referenceBoundObject = a_ref ? a_ref->GetBaseObject() : nullptr;
 					auto* referenceBaseObject = referenceBoundObject ? referenceBoundObject->As<RE::TESForm>() : nullptr;

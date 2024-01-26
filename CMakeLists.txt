@@ -19,41 +19,31 @@ endmacro()
 
 macro(find_commonlib_path)
 	if(CommonLibName AND NOT ${CommonLibName} STREQUAL "")
-
-		find_path(CommonLibPath
-			include/REL/Relocation.h 
-			PATHS extern/${CommonLibName})
+		if(SUPPORT_LATEST)
+			find_path(CommonLibPath
+				include/REL/Relocation.h 
+				PATHS extern/${CommonLibName})
+		else()
+			set_from_environment(${CommonLibName}NGPath)
+			set(CommonLibPath ${${CommonLibName}NGPath})
+		endif()
 	endif()
 endmacro()
 
 set_from_environment(VCPKG_ROOT) 
 
-if(BUILD_SKYRIMAE) 
+if(SUPPORT_LATEST) 
 	add_compile_definitions(SKYRIM_AE)
 	add_compile_definitions(SKYRIM_SUPPORT_AE)
-
-	if(NOT SUPPORT_LATEST)
-		add_compile_definitions(SUPPORT_OLD_VERSIONS)
-	endif()
-
 	set(CommonLibName "CommonLibSSE")
-	set_from_environment(SkyrimAEPath)
-	set(SkyrimPath ${SkyrimAEPath})
-	set(SkyrimVersion "Skyrim AE")
+	set(SkyrimVersion "Skyrim Latest")
 	set(VERSION ${VERSION}.${AE_VERSION})
-elseif(BUILD_SKYRIMVR)
-	add_compile_definitions(SKYRIMVR)
-	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
-	set(CommonLibName "CommonLibVR")
-	set_from_environment(SkyrimVRPath)
-	set(SkyrimPath ${SkyrimVRPath})
-	set(SkyrimVersion "Skyrim VR")
-	set(VERSION ${VERSION}.${VR_VERSION})
 else()
+	add_compile_definitions(BUILD_NG)
 	set(CommonLibName "CommonLibSSE")
 	set_from_environment(Skyrim64Path)
 	set(SkyrimPath ${Skyrim64Path})
-	set(SkyrimVersion "Skyrim SSE")
+	set(SkyrimVersion "Skyrim")
 endif()
 
 find_commonlib_path()
@@ -61,10 +51,6 @@ find_commonlib_path()
 message(
 	STATUS
 	"Building ${NAME} ${VERSION} for ${SkyrimVersion} at ${SkyrimPath} with ${CommonLibName} at ${CommonLibPath}."
-)
-message(
-	STATUS
-	"Building for latest version: ${SUPPORT_LATEST}."
 )
 
 if(DEFINED VCPKG_ROOT)
@@ -164,7 +150,6 @@ source_group(
 )
 
 # ---- Create DLL ----
-
 add_library(
 	${PROJECT_NAME}
 	SHARED

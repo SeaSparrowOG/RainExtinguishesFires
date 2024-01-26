@@ -37,9 +37,16 @@
       "toolset": "v143"
     },
     {
-      "name": "se",
+      "name": "ng",
       "hidden": true,
-      "binaryDir": "${sourceDir}/build-15"
+      "binaryDir": "${sourceDir}/build-ng",
+      "cacheVariables": {
+        "BUILD_TESTS": {
+          "type": "STRING",
+          "value": "OFF"
+        }
+      }
+
     },
     {
       "name": "ae",
@@ -51,30 +58,13 @@
       }
     },
     {
-      "name": "ae-old",
-      "hidden": true,
-      "binaryDir": "${sourceDir}/build-16-old",
-      "cacheVariables": {
-        "BUILD_SKYRIMAE": true
-      }
-    },
-    {
-      "name": "vr",
-      "hidden": true,
-      "binaryDir": "${sourceDir}/build-vr",
-      "cacheVariables": {
-        "BUILD_SKYRIMVR": true,
-        "SUPPORT_VR":  true
-      }
-    },
-    {
-      "name": "vs2022-windows-vcpkg-se",
+      "name": "vs2022-windows-vcpkg-ng",
       "inherits": [
         "cmake-dev",
         "vcpkg",
         "windows",
         "vs2022",
-        "se"
+        "ng"
       ]
     },
     {
@@ -86,26 +76,6 @@
         "vs2022",
         "ae"
       ]
-    },
-    {
-      "name": "vs2022-windows-vcpkg-vr",
-      "inherits": [
-        "cmake-dev",
-        "vcpkg",
-        "windows",
-        "vs2022",
-        "vr"
-      ]
-    },
-    {
-      "name": "vs2022-windows-vcpkg-ae-old",
-      "inherits": [
-        "cmake-dev",
-        "vcpkg",
-        "windows",
-        "vs2022",
-        "ae-old"
-      ]
     }
   ],
   "buildPresets": [
@@ -115,18 +85,8 @@
       "configuration": "Release"
     },
     {
-      "name": "Release - 1.5",
-      "configurePreset": "vs2022-windows-vcpkg-se",
-      "configuration": "Release"
-    },
-    {
-      "name": "Release - VR",
-      "configurePreset": "vs2022-windows-vcpkg-vr",
-      "configuration": "Release"
-    },
-    {
-      "name": "Release - 1.6 Old",
-      "configurePreset": "vs2022-windows-vcpkg-ae-old",
+      "name": "Release - ng",
+      "configurePreset": "vs2022-windows-vcpkg-ng",
       "configuration": "Release"
     }
   ]

@@ -23,7 +23,12 @@ namespace Events {
 		auto refLocation = a_center->GetPosition();
 
 		if (const auto TES = RE::TES::GetSingleton(); TES) {
+#ifdef BUILD_NG
+			TES->ForEachReferenceInRange(a_center, a_radius, [&](RE::TESObjectREFR& a_workaround) {
+				auto* a_ref = &a_workaround;
+#else
 			TES->ForEachReferenceInRange(a_center, a_radius, [&](RE::TESObjectREFR* a_ref) {
+#endif
 				const auto baseBound = a_ref ? a_ref->GetBaseObject() : nullptr;
 				if (!baseBound) return RE::BSContainer::ForEachResult::kContinue;
 				if (!baseBound->Is(a_type)) return RE::BSContainer::ForEachResult::kContinue;
@@ -57,7 +62,12 @@ namespace Events {
 		RE::TESObjectREFR* response = nullptr;
 		if (const auto TES = RE::TES::GetSingleton(); TES) {
 			auto centerLocation = a_center->data.location;
+#ifdef BUILD_NG
+			TES->ForEachReferenceInRange(a_center, a_radius, [&](RE::TESObjectREFR& a_workaround) {
+				auto* a_ref = &a_workaround;
+#else
 			TES->ForEachReferenceInRange(a_center, a_radius, [&](RE::TESObjectREFR* a_ref) {
+#endif
 				auto* baseBound = a_ref ? a_ref->GetBaseObject() : nullptr;
 				if (!baseBound) return RE::BSContainer::ForEachResult::kContinue;
 
@@ -308,7 +318,11 @@ namespace Events {
 		this->ManipulateFireRegistry(offReference, true);
 		offReference->MoveTo(a_fire);
 		offReference->data.angle = a_fire->data.angle;
+#ifdef BUILD_NG
+		offReference->GetReferenceRuntimeData().refScale = a_fire->GetReferenceRuntimeData().refScale;
+#else
 		offReference->refScale = a_fire->refScale;
+#endif
 		auto* vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
 		auto* handlePolicy = vm->GetObjectHandlePolicy();
 		RE::VMHandle handle = handlePolicy->GetHandleForObject(offReference->GetFormType(), offReference);
@@ -356,7 +370,12 @@ namespace Events {
 
 	void Papyrus::ExtinguishAllFires() {
 		if (const auto TES = RE::TES::GetSingleton(); TES) {
-			TES->ForEachReferenceInRange(RE::PlayerCharacter::GetSingleton()->AsReference(), 0.0f, [&](RE::TESObjectREFR* a_ref) {
+#ifdef BUILD_NG
+			TES->ForEachReferenceInRange(RE::PlayerCharacter::GetSingleton()->AsReference(), 0.0, [&](RE::TESObjectREFR& a_workaround) {
+				auto* a_ref = &a_workaround;
+#else
+			TES->ForEachReferenceInRange(RE::PlayerCharacter::GetSingleton()->AsReference(), 0.0, [&](RE::TESObjectREFR* a_ref) {
+#endif
 				if (!a_ref->Is3DLoaded()) return RE::BSContainer::ForEachResult::kContinue;
 
 				auto* referenceBoundObject = a_ref ? a_ref->GetBaseObject() : nullptr;
