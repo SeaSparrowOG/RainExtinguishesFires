@@ -98,17 +98,10 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
     v.PluginName(Version::PROJECT);
     v.AuthorName("SeaSparrow");
     v.UsesAddressLibrary();
-
-#ifdef BUILD_NG
-    v.UsesStructsPost629();
-    v.CompatibleVersions({
-        SKSE::RUNTIME_SSE_1_6_640});
-#else
     v.UsesUpdatedStructs();
     v.CompatibleVersions({
         SKSE::RUNTIME_1_6_1130,
         _1_6_1170 });
-#endif
     return v;
     }();
 
@@ -117,12 +110,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a_
     _loggerInfo("Starting up Rain Extinguishes Fires.");
     _loggerInfo("Plugin Version: {}.{}.{}", Version::MAJOR, Version::MINOR, Version::PATCH);
     _loggerInfo("Version build:");
-
-#ifdef BUILD_NG
-    _loggerInfo("    >NG Version.");
-#else 
     _loggerInfo("    >Latest Version.");
-#endif
 
     _loggerInfo("Rain Extinguishes Fires is performing startup tasks.");
 

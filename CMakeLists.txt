@@ -19,49 +19,21 @@ endmacro()
 
 macro(find_commonlib_path)
 	if(CommonLibName AND NOT ${CommonLibName} STREQUAL "")
-		if(SUPPORT_LATEST)
-			find_path(CommonLibPath
-				include/REL/Relocation.h 
-				PATHS extern/${CommonLibName})
-		else()
-			set_from_environment(${CommonLibName}NGPath)
-			set(CommonLibPath ${${CommonLibName}NGPath})
-		endif()
+		find_path(CommonLibPath
+			include/REL/Relocation.h 
+			PATHS extern/${CommonLibName})
 	endif()
 endmacro()
 
 set_from_environment(VCPKG_ROOT) 
-
-if(SUPPORT_LATEST) 
-	add_compile_definitions(SKYRIM_AE)
-	add_compile_definitions(SKYRIM_SUPPORT_AE)
-	set(CommonLibName "CommonLibSSE")
-	set(SkyrimVersion "Skyrim Latest")
-	set(VERSION ${VERSION}.${AE_VERSION})
-else()
-	add_compile_definitions(BUILD_NG)
-	set(CommonLibName "CommonLibSSE")
-	set_from_environment(Skyrim64Path)
-	set(SkyrimPath ${Skyrim64Path})
-	set(SkyrimVersion "Skyrim")
-endif()
+add_compile_definitions(SKYRIM_AE)
+add_compile_definitions(SKYRIM_SUPPORT_AE)
+set(CommonLibName "CommonLibSSE")
+set(VERSION ${VERSION}.${AE_VERSION})
 
 find_commonlib_path()
-
-message(
-	STATUS
-	"Building ${NAME} ${VERSION} for ${SkyrimVersion} at ${SkyrimPath} with ${CommonLibName} at ${CommonLibPath}."
-)
-
-if(DEFINED VCPKG_ROOT)
-	set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
-	set(VCPKG_TARGET_TRIPLET "x64-windows-static" CACHE STRING "")
-else()
-	message(
-		WARNING
-		"Variable VCPKG_ROOT is not set. Continuing without vcpkg."
-	)
-endif()
+set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
+set(VCPKG_TARGET_TRIPLET "x64-windows-static" CACHE STRING "")
  
 set(Boost_USE_STATIC_RUNTIME OFF CACHE BOOL "")
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STRING "")
@@ -126,8 +98,6 @@ else ()
 endif()
 
 find_path(CLIB_UTIL_INCLUDE_DIRS "ClibUtil/utils.hpp")
-find_path(SRELL_INCLUDE_DIRS "srell.hpp")
-find_package(frozen CONFIG REQUIRED)
 find_package(jsoncpp CONFIG REQUIRED)
 
 # ---- Add source files ----
@@ -176,7 +146,6 @@ target_include_directories(
 	PRIVATE
 		${CMAKE_CURRENT_BINARY_DIR}/include
 		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${SRELL_INCLUDE_DIRS}
 		${CLIB_UTIL_INCLUDE_DIRS}
 		${JSONCPP_INCLUDE_DIRS}
 )

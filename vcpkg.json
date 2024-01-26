@@ -5,16 +5,11 @@
   "homepage": "",
   "license": "MIT",
   "dependencies": [
-    "boost-stl-interfaces",
-    "frozen",
     "rsm-binary-io",
-    "srell",
     "spdlog",
-    "xbyak",
     "clib-util",
     "jsoncpp",
-    "catch2",
-    "rapidcsv"
+    "xbyak"
   ],
   "overrides": [
     {
