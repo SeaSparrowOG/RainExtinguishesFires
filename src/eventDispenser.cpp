@@ -294,7 +294,7 @@ namespace Events {
 			//TODO: Include this.
 		}
 
-		additionalExtinguishes = GetNearbyMatchingObjects(a_fire, settingsSingleton->GetLightSearchDistance(), CachedData::FireRegistry::GetSingleton(), this);
+		additionalExtinguishes = GetNearbyMatchingObjects(a_fire, settingsSingleton->GetReferenceLookupRadius(), CachedData::FireRegistry::GetSingleton(), this);
 		for (auto* obj : additionalExtinguishes) { this->ManipulateSecondaryRegistry(obj, true); }
 		auto offFire = a_fire->PlaceObjectAtMe(offBoundForm, false);
 		auto* offReference = offFire.get();
@@ -351,7 +351,7 @@ namespace Events {
 
 	void Papyrus::ExtinguishAllFires() {
 		if (const auto TES = RE::TES::GetSingleton(); TES) {
-			TES->ForEachReferenceInRange(RE::PlayerCharacter::GetSingleton()->AsReference(), 0.0, [&](RE::TESObjectREFR* a_ref) {
+			TES->ForEachReferenceInRange(RE::PlayerCharacter::GetSingleton()->AsReference(), CachedData::FireRegistry::GetSingleton()->GetReferenceLookupRadius(), [&](RE::TESObjectREFR* a_ref) {
 				if (!a_ref->Is3DLoaded()) return RE::BSContainer::ForEachResult::kContinue;
 
 				auto* referenceBoundObject = a_ref ? a_ref->GetBaseObject() : nullptr;
