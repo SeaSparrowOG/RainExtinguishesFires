@@ -4,8 +4,12 @@ SKSE plugin that allows fires to respond to the weather and ice/fire spells.
 ## Building
 1. Install VCPKG and add its installation location in an environment variable called "VCPKG_ROOT".
 2. Install CMake.
-3. Clone the latest release of PO3's Commonlib fork, and add its location to an environment variable called "CommonLibSSEPath". 
- - Optionally, if building for pre 1130, clone PO3's Commonlib fork at commit at SHA db60c89b5c8bdd39a786dfdbe605efac24326793 and add its location to an environment variable called "CommonLibSSEOldPath".
- - Optionally, define your MO2 Mods folder in an environment variable called "SKYRIM_MODS_FOLDER". If defined, building outputs the DLL in a new mod.
-4. Clone this repository, and open the containing folder with Visual Studio.
-5. Build All for the version you want.
+3. Install VS with C++ Desktop Development
+4. Clone this repository.
+5. Open a Git Bash/Powershell Window in the project folder, and run git submodule innit and git submodule update --recursive
+6. Open the project in VS, wait for CMake to finish, and build the project.
+
+## Automagically deploy
+If you want to deploy directly in a MO2 instance, you can add the mods folder of that instance in an
+environment variable called "SKYRIM_MODS_FOLDER". Upon building, it will automatically create a mod
+folder in that location with the built DLL inside.
