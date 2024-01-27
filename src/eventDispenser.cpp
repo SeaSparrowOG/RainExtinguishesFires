@@ -11,66 +11,60 @@ namespace Events {
 	}
 
 	/**
-	* Returns the closest reference with the provided type.
-	* @param a_center The reference from which to search.
-	* @param a_radius The radius within which to search.
-	* @param a_type The type of reference to check. 31 is lights, 36 Moveable statics.
+	* Returns a vector of nearby objects that can be extinguished.
+	* @param a_center The fire from which to find the matching objects.
+	* @param a_radius The radius over which to search.
+	* @return Vector of references.
 	*/
-	RE::TESObjectREFR* GetNearestReferenceOfType(RE::TESObjectREFR* a_center, float a_radius, RE::FormType a_type, bool a_matchStoredObjects) {
-		RE::TESObjectREFR* response = nullptr;
-		bool found = false;
-		float lastDistance = a_radius;
+	std::vector<RE::TESObjectREFR*> GetNearbyMatchingObjects(RE::TESObjectREFR* a_center, float a_radius, CachedData::FireRegistry* a_fireREgistry, Papyrus* a_eventDispenser) {
+		std::vector<RE::TESObjectREFR*> response;
+		RE::TESObjectREFR* foundLight = nullptr;
+		RE::TESObjectREFR* foundSmoke = nullptr;
+		RE::TESObjectREFR* foundDynDOLODFire = nullptr;
+		float lastLightDistance = a_radius;
+		float lastDynDOLODDistance = a_radius;
+		float lastSmokeDistance = a_radius;
 		auto refLocation = a_center->GetPosition();
 
 		if (const auto TES = RE::TES::GetSingleton(); TES) {
 		TES->ForEachReferenceInRange(a_center, a_radius, [&](RE::TESObjectREFR* a_ref) {
-				const auto baseBound = a_ref ? a_ref->GetBaseObject() : nullptr;
-				if (!baseBound) return RE::BSContainer::ForEachResult::kContinue;
-				if (!baseBound->Is(a_type)) return RE::BSContainer::ForEachResult::kContinue;
+			if (a_eventDispenser->IsRefFrozen(a_ref)) return continueContainer;
+			if (!a_ref->Is3DLoaded()) return continueContainer;
+			if (a_ref->IsDisabled()) return continueContainer;
+			const auto baseBound = a_ref ? a_ref->GetBaseObject() : nullptr;
+			auto* baseForm = baseBound ? baseBound->As<RE::TESForm>() : nullptr;
+			bool isManaged = baseForm ? a_fireREgistry->IsValidObject(baseForm) : false;
+			if (!isManaged) return RE::BSContainer::ForEachResult::kContinue;
 
-				if (a_matchStoredObjects) {
-					auto* baseForm = baseBound->As<RE::TESForm>();
-					if (!baseForm) return RE::BSContainer::ForEachResult::kContinue;
-					if (!CachedData::FireRegistry::GetSingleton()->IsValidObject(baseForm)) {
-						return RE::BSContainer::ForEachResult::kContinue;
-					}
+			float distance = a_ref->data.location.GetDistance(a_center->data.location);
+
+			if (a_fireREgistry->IsSmokeObject(baseForm) && a_fireREgistry->GetCheckSmoke() && distance < lastSmokeDistance) {
+				foundSmoke = a_ref;
+			}
+			else if (a_fireREgistry->IsDynDOLODFire(baseForm) && distance < lastDynDOLODDistance) {
+				std::string edid = clib_util::editorID::get_editorID(baseForm);
+				std::string originalEdid = clib_util::editorID::get_editorID(a_center->GetBaseObject()->As<RE::TESForm>());
+				if (edid.contains(originalEdid)) {
+					foundDynDOLODFire = a_ref;
 				}
-
-				auto lightLocation = a_ref->GetPosition();
-				float currentDistance = lightLocation.GetDistance(refLocation);
-				if (currentDistance > lastDistance) return RE::BSContainer::ForEachResult::kContinue;
-
-				found = true;
-				response = a_ref;
-				lastDistance = currentDistance;
-				return RE::BSContainer::ForEachResult::kContinue;
-				});
+			}
+			else if (baseBound->Is(RE::FormType::Light) && a_fireREgistry->GetCheckLights() && distance < lastLightDistance) {
+				foundLight = a_ref;
+			}			
+			return continueContainer;
+			});
 		}
-		if (found) return response;
-		return nullptr;
-	}
-
-	RE::TESObjectREFR* GetNearestMatchingDynDOLODFire(RE::TESObjectREFR* a_center, float a_radius, std::string a_name) {
-		if (a_name.empty()) return nullptr;
-
-		bool found = false;
-		RE::TESObjectREFR* response = nullptr;
-		if (const auto TES = RE::TES::GetSingleton(); TES) {
-			auto centerLocation = a_center->data.location;
-			TES->ForEachReferenceInRange(a_center, a_radius, [&](RE::TESObjectREFR* a_ref) {
-				auto* baseBound = a_ref ? a_ref->GetBaseObject() : nullptr;
-				if (!baseBound) return RE::BSContainer::ForEachResult::kContinue;
-
-				if (clib_util::editorID::get_editorID(baseBound->As<RE::TESForm>()).contains(a_name)) {
-					response = a_ref;
-					found = true;
-				}
-				return RE::BSContainer::ForEachResult::kContinue;
-				});
+		if (foundLight) {
+			response.push_back(foundLight);
+		}
+		if (foundSmoke) {
+			response.push_back(foundSmoke);
+		}
+		if (foundDynDOLODFire) {
+			response.push_back(foundDynDOLODFire);
 		}
 
-		if (found) return response;
-		return nullptr;
+		return response;
 	}
 
 	void Papyrus::Papyrus::AddWeatherChangeListener(const RE::TESForm* a_form, bool a_listen) {
@@ -93,6 +87,8 @@ namespace Events {
 			this->movedToExterior.Unregister(a_form);
 		}
 	}
+
+	bool Events::Papyrus::IsRefFrozen(RE::TESObjectREFR* a_ref) { return this->secondaryRegister.contains(a_ref); }
 
 	bool Papyrus::IsRaining() {
 		if (this->isRaining) {
@@ -123,6 +119,26 @@ namespace Events {
 			}
 		}
 		return false;
+	}
+
+	bool Events::Papyrus::ManipulateSecondaryRegistry(RE::TESObjectREFR* a_ref, bool a_add) {
+		if (this->disable) return false;
+		if (!a_ref) return false;
+
+		auto refBound = a_ref->GetBaseObject();
+		auto* refBase = refBound ? refBound->As<RE::TESForm>() : nullptr;
+		if (!refBase) return false;
+		if (!CachedData::FireRegistry::GetSingleton()->IsValidObject(refBase)) return false;
+
+		if (a_add) {
+			if (this->frozenFiresRegister.contains(a_ref)) return false;
+			this->frozenFiresRegister[a_ref] = true;
+		}
+		else {
+			if (!this->frozenFiresRegister.contains(a_ref)) return false;
+			this->frozenFiresRegister.erase(a_ref);
+		}
+		return true;
 	}
 
 	bool Papyrus::ManipulateFireRegistry(RE::TESObjectREFR* a_fire, bool a_add) {
@@ -278,31 +294,8 @@ namespace Events {
 			//TODO: Include this.
 		}
 
-		if (settingsSingleton->GetCheckLights()) {
-			auto foundLight = GetNearestReferenceOfType(a_fire, settingsSingleton->GetLightSearchDistance(), RE::FormType::Light, false);
-			if (foundLight) {
-				additionalExtinguishes.push_back(foundLight);
-			}
-		}
-
-		if (settingsSingleton->GetCheckSmoke()) {
-			auto foundSmoke = GetNearestReferenceOfType(a_fire, settingsSingleton->GetSmokeSearchDistance(), RE::FormType::MovableStatic, true);
-			if (foundSmoke) additionalExtinguishes.push_back(foundSmoke);
-		}
-
-		if (dyndolodFire) {
-			std::string editorID = clib_util::editorID::get_editorID(offForm);
-			auto* baseFire = a_fire->GetBaseObject()->As<RE::TESForm>();
-			std::string baseEDID = clib_util::editorID::get_editorID(baseFire);
-
-			if (!(baseEDID.empty() || baseEDID.contains("DYNDOLOD"))) {
-				RE::TESObjectREFR* dyndolodREF = GetNearestMatchingDynDOLODFire(a_fire, 200.0f, baseEDID + "_DYNDOLOD_BASE");
-				if (!dyndolodREF) {
-					additionalExtinguishes.push_back(dyndolodREF);
-				}
-			}
-		}
-
+		additionalExtinguishes = GetNearbyMatchingObjects(a_fire, settingsSingleton->GetLightSearchDistance(), CachedData::FireRegistry::GetSingleton(), this);
+		for (auto* obj : additionalExtinguishes) { this->ManipulateSecondaryRegistry(obj, true); }
 		auto offFire = a_fire->PlaceObjectAtMe(offBoundForm, false);
 		auto* offReference = offFire.get();
 		this->ManipulateFireRegistry(offReference, true);
@@ -316,6 +309,7 @@ namespace Events {
 			this->ManipulateFireRegistry(a_fire, false);
 			offReference->Disable();
 			offReference->DeleteThis();
+			for (auto* obj : additionalExtinguishes) { this->ManipulateSecondaryRegistry(obj, false); }
 			return;
 		}
 
@@ -351,6 +345,7 @@ namespace Events {
 			offReference->DeleteThis();
 			this->ManipulateFireRegistry(a_fire, false);
 			this->ManipulateFireRegistry(offReference, false);
+			for (auto* obj : additionalExtinguishes) { this->ManipulateSecondaryRegistry(obj, false); }
 		}
 	}
 

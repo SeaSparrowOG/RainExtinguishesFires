@@ -4,6 +4,13 @@ namespace CachedData {
 	struct FireData {
 		bool         dyndolodFire;
 		RE::TESForm* offVersion;
+		RE::TESForm* dyndolodVersion;
+
+		FireData() {
+			this->dyndolodFire = false;
+			this->dyndolodVersion = nullptr;
+			this->offVersion = nullptr;
+		}
 	};
 
 	/**
@@ -15,12 +22,12 @@ namespace CachedData {
 		bool                      IsOffFire(RE::TESForm* a_offForm);
 		bool                      IsOnFire(RE::TESForm* a_offForm);
 		bool                      IsDynDOLODFire(RE::TESForm* a_litFire);
+		bool                      IsSmokeObject(RE::TESForm* a_smoke);
 		bool                      IsValidObject(RE::TESForm* a_form);
 		bool                      GetCheckOcclusion();
 		bool                      GetCheckLights();
 		bool                      GetCheckSmoke();
 		FireData                  GetOffForm(RE::TESForm* a_litFire);
-		std::vector<RE::TESForm*> GetStoredSmokeObjects();
 		float                     GetSmokeSearchDistance();
 		float                     GetLightSearchDistance();
 		float                     GetRequiredOffTime();
@@ -39,8 +46,9 @@ namespace CachedData {
 		float                                      lightLookupRadius;
 		float                                      requiredOffTime;
 		float                                      smokeLookupRadius;
-		std::vector<RE::TESForm*>                  storedSmoke;
+		std::unordered_map<RE::TESForm*, bool>     allStoredObjects;
 		std::unordered_map<RE::TESForm*, bool>     smokeRegister;
+		std::unordered_map<RE::TESForm*, bool>     dyndolodFireRegister;
 		std::unordered_map<RE::TESForm*, bool>     reverseFireRegister;
 		std::unordered_map<RE::TESForm*, FireData> fireRegister;
 	};

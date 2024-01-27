@@ -3,6 +3,7 @@
 #include "fireRegister.h"
 
 namespace Events {
+#define continueContainer RE::BSContainer::ForEachResult::kContinue
 	class Papyrus : public ISingleton<Papyrus> {
 	public:
 		void AddWeatherChangeListener(const RE::TESForm* a_form, bool a_listen);
@@ -10,7 +11,9 @@ namespace Events {
 		void ExtinguishFire(RE::TESObjectREFR* a_litFire, CachedData::FireData a_data);
 		void ExtinguishAllFires();
 		bool IsRaining();
+		bool IsRefFrozen(RE::TESObjectREFR* a_ref);
 		bool ManipulateFireRegistry(RE::TESObjectREFR* a_fire, bool a_add);
+		bool ManipulateSecondaryRegistry(RE::TESObjectREFR* a_ref, bool a_add);
 		void RelightFire(RE::TESObjectREFR* a_litFire);
 		void SendWeatherChange(RE::TESWeather* a_weather);
 		void SendPlayerChangedInteriorExterior(bool a_movedToExterior);
@@ -41,5 +44,8 @@ namespace Events {
 
 		//Fires take appreciable time to reload due to "Utility.Wait()".
 		std::unordered_map<RE::TESObjectREFR*, bool>   frozenFiresRegister;
+
+		//Same here, but mostly for DLL speed.
+		std::unordered_map<RE::TESObjectREFR*, bool>   secondaryRegister;
 	};
 }

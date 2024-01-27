@@ -205,6 +205,7 @@ namespace SettingsReader {
 
 						if (foundForm) {
 							_loggerInfo("            >DynDOLOD match: {}.", dyndolodEDID);
+							offFireData.dyndolodVersion = foundForm;
 							offFireData.dyndolodFire = true;
 						}
 					}
@@ -263,8 +264,6 @@ namespace CachedData {
 
 	bool FireRegistry::GetCheckSmoke() { return this->lookupSmoke; }
 
-	std::vector<RE::TESForm*> FireRegistry::GetStoredSmokeObjects() { return this->storedSmoke; }
-
 	float CachedData::FireRegistry::GetSmokeSearchDistance() { return this->smokeLookupRadius; }
 
 	float CachedData::FireRegistry::GetLightSearchDistance() { return this->lightLookupRadius; }
@@ -281,6 +280,8 @@ namespace CachedData {
 
 	void CachedData::FireRegistry::SetRequiredOffTime(float a_value) { this->requiredOffTime = a_value; }
 
+	bool CachedData::FireRegistry::IsSmokeObject(RE::TESForm* a_smoke) { return this->smokeRegister.contains(a_smoke); }
+
 	bool FireRegistry::IsOnFire(RE::TESForm* a_litFire) {
 		return this->fireRegister.contains(a_litFire);
 	}
@@ -296,10 +297,7 @@ namespace CachedData {
 		return false;
 	}
 
-	bool CachedData::FireRegistry::IsValidObject(RE::TESForm* a_form) {
-		if (!a_form) return false;
-		return this->smokeRegister.contains(a_form);
-	}
+	bool CachedData::FireRegistry::IsValidObject(RE::TESForm* a_form) { return this->allStoredObjects.contains(a_form); }
 
 	FireData FireRegistry::GetOffForm(RE::TESForm* a_litFire) {
 		if (this->fireRegister.contains(a_litFire)) {
@@ -312,6 +310,8 @@ namespace CachedData {
 		if (!a_data.offVersion) return false;
 		this->fireRegister[a_lit] = a_data;
 		this->reverseFireRegister[a_data.offVersion] = true;
+		this->allStoredObjects[a_lit] = true;
+		this->allStoredObjects[a_data.dyndolodVersion] = true;
 		return true;
 	}
 
@@ -319,7 +319,7 @@ namespace CachedData {
 		if (!a_smoke) return false;
 		if (this->smokeRegister.contains(a_smoke)) return false;
 		this->smokeRegister[a_smoke] = true;
-		this->storedSmoke.push_back(a_smoke);
+		this->allStoredObjects[a_smoke] = true;
 		return true;
 	}
 

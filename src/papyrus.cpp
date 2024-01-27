@@ -47,11 +47,21 @@ namespace Papyrus {
 		return Events::Papyrus::GetSingleton()->ManipulateFireRegistry(a_fire, false);
 	}
 
+	bool FreezeObject(STATIC_ARGS, RE::TESObjectREFR* a_ref) {
+		return Events::Papyrus::GetSingleton()->ManipulateSecondaryRegistry(a_ref, true);
+	}
+
+	bool UnFreezeObject(STATIC_ARGS, RE::TESObjectREFR* a_ref) {
+		return Events::Papyrus::GetSingleton()->ManipulateSecondaryRegistry(a_ref, false);
+	}
+
 	void Bind(VM& a_vm) {
 		BIND(GetVersion);
 		BIND(ExtinguishAllLoadedFires);
 		BIND(FreezeFire);
 		BIND(UnFreezeFire);
+		BIND(FreezeObject);
+		BIND(UnFreezeObject);
 		BIND(SetRainingFlag);
 		BIND_EVENT(RegisterForAccurateWeatherChange, true);
 		BIND_EVENT(RegisterForPlayerCellChangeEvent, true);
