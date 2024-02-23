@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 set(NAME "RainExtinguishesFires" CACHE STRING "")
 set(VERSION 5.0.0 CACHE STRING "")
-set(VR_VERSION 2)
-set(AE_VERSION 1)
 
 # ---- Options ----
 option(SUPPORT_LATEST "Builds for the latest version of Skyrim." OFF)
@@ -26,17 +24,17 @@ macro(find_commonlib_path)
 endmacro()
 
 set_from_environment(VCPKG_ROOT) 
-add_compile_definitions(SKYRIM_AE)
-add_compile_definitions(SKYRIM_SUPPORT_AE)
 set(CommonLibName "CommonLibSSE")
-set(VERSION ${VERSION}.${AE_VERSION})
-
 find_commonlib_path()
 set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
 set(VCPKG_TARGET_TRIPLET "x64-windows-static" CACHE STRING "")
- 
 set(Boost_USE_STATIC_RUNTIME OFF CACHE BOOL "")
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STRING "")
+
+if (BUILD_SKYRIMAE)
+	add_compile_definitions(SKYRIM_AE)
+	add_compile_definitions(SKYRIM_SUPPORT_AE)
+endif()
 
 # ---- Project ----
 
@@ -68,11 +66,6 @@ if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
 endif()
 
 # ---- Globals ----
-
-add_compile_definitions(
-	SKSE_SUPPORT_XBYAK
-)
-
 if (MSVC)
 	if (NOT ${CMAKE_GENERATOR} STREQUAL "Ninja")
 		add_compile_options(
@@ -83,7 +76,6 @@ endif ()
 
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
-
 set(Boost_USE_STATIC_LIBS ON)
 
 # ---- Dependencies ----

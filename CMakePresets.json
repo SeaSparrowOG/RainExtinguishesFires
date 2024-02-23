@@ -37,34 +37,27 @@
       "toolset": "v143"
     },
     {
-      "name": "ng",
+      "name": "se",
       "hidden": true,
-      "binaryDir": "${sourceDir}/build-ng",
-      "cacheVariables": {
-        "BUILD_TESTS": {
-          "type": "STRING",
-          "value": "OFF"
-        }
-      }
-
+      "binaryDir": "${sourceDir}/build-15"
     },
     {
       "name": "ae",
       "hidden": true,
-      "binaryDir": "${sourceDir}/build-16",
+      "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "BUILD_SKYRIMAE": true,
         "SUPPORT_LATEST": true
       }
     },
     {
-      "name": "vs2022-windows-vcpkg-ng",
+      "name": "vs2022-windows-vcpkg-se",
       "inherits": [
         "cmake-dev",
         "vcpkg",
         "windows",
         "vs2022",
-        "ng"
+        "se"
       ]
     },
     {
@@ -80,13 +73,13 @@
   ],
   "buildPresets": [
     {
-      "name": "Release - 1.6",
+      "name": "Release",
       "configurePreset": "vs2022-windows-vcpkg-ae",
       "configuration": "Release"
     },
     {
-      "name": "Release - ng",
-      "configurePreset": "vs2022-windows-vcpkg-ng",
+      "name": "Release - Outdated",
+      "configurePreset": "vs2022-windows-vcpkg-se",
       "configuration": "Release"
     }
   ]
