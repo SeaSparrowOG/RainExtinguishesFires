@@ -137,7 +137,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a_
 #ifdef SKYRIM_AE
     _loggerInfo("    >Latest Version.");
 #else
-    _loggerInfo("    >1.5 Version. Do not report ANY issues with this version.")
+    _loggerInfo("    >1.5 Version. Do not report ANY issues with this version.");
 #endif
     _loggerInfo("Rain Extinguishes Fires is performing startup tasks.");
 
