@@ -46,8 +46,7 @@
       "hidden": true,
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
-        "BUILD_SKYRIMAE": true,
-        "SUPPORT_LATEST": true
+        "BUILD_SKYRIMAE": true
       }
     },
     {

@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.21)
+set(PROJECT_AUTHOR "SeaSparrow" CACHE STRING "")
 set(NAME "RainExtinguishesFires" CACHE STRING "")
-set(VERSION 5.0.0 CACHE STRING "")
+set(VERSION 1.0.0 CACHE STRING "")
 
 # ---- Options ----
-option(SUPPORT_LATEST "Builds for the latest version of Skyrim." OFF)
-option(SUPPORT_VR "Build for VR. I cannot test this." OFF)
+option(SUPPORT_VR "Build for VR." OFF)
 option(BUILD_SKYRIMVR "Build for Skyrim VR" OFF)
 option(BUILD_SKYRIMAE "Build for Skyrim AE" OFF)
 
@@ -16,10 +16,16 @@ macro(set_from_environment VARIABLE)
 endmacro()
 
 macro(find_commonlib_path)
-	if(CommonLibName AND NOT ${CommonLibName} STREQUAL "")
+	if (CommonLibName AND NOT ${CommonLibName} STREQUAL "")
+		# Check extern
 		find_path(CommonLibPath
-			include/REL/Relocation.h 
-			PATHS extern/${CommonLibName})
+		include/REL/Relocation.h
+		PATHS extern/${CommonLibName})
+		if (${CommonLibPath} STREQUAL "CommonLibPath-NOTFOUND")
+			#Check path
+			set_from_environment(${CommonLibName}Path)
+			set(CommonLibPath ${${CommonLibName}Path})
+		endif()
 	endif()
 endmacro()
 
@@ -90,7 +96,6 @@ else ()
 endif()
 
 find_path(CLIB_UTIL_INCLUDE_DIRS "ClibUtil/utils.hpp")
-find_package(jsoncpp CONFIG REQUIRED)
 
 # ---- Add source files ----
 include(cmake/headerlist.cmake)
@@ -139,14 +144,12 @@ target_include_directories(
 		${CMAKE_CURRENT_BINARY_DIR}/include
 		${CMAKE_CURRENT_SOURCE_DIR}/include
 		${CLIB_UTIL_INCLUDE_DIRS}
-		${JSONCPP_INCLUDE_DIRS}
 )
 
 target_link_libraries(
 	${PROJECT_NAME}
 	PRIVATE
 		${CommonLibName}::${CommonLibName}
-		JsonCpp::JsonCpp
 )
 
 target_precompile_headers(
@@ -183,13 +186,9 @@ endif ()
 # ---- Post build ----
 if(DEFINED ENV{SKYRIM_MODS_FOLDER} AND IS_DIRECTORY "$ENV{SKYRIM_MODS_FOLDER}")
 	if(BUILD_SKYRIMAE)
-		if (SUPPORT_LATEST)
-			set(OUTPUT_FOLDER "$ENV{SKYRIM_MODS_FOLDER}/${PROJECT_NAME} - Latest")
-		else()
-			set(OUTPUT_FOLDER "$ENV{SKYRIM_MODS_FOLDER}/${PROJECT_NAME} - 640")
-		endif()
+		set(OUTPUT_FOLDER "$ENV{SKYRIM_MODS_FOLDER}/${PROJECT_NAME}")
 	else() 
-		set(OUTPUT_FOLDER "$ENV{SKYRIM_MODS_FOLDER}/${PROJECT_NAME} - 97")
+		set(OUTPUT_FOLDER "$ENV{SKYRIM_MODS_FOLDER}/${PROJECT_NAME} - Old")
 	endif()
 endif()
 
