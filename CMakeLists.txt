@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 set(PROJECT_AUTHOR "SeaSparrow" CACHE STRING "")
 set(NAME "RainExtinguishesFires" CACHE STRING "")
-set(VERSION 1.0.0 CACHE STRING "")
+set(VERSION 5.0.0 CACHE STRING "")
 
 # ---- Options ----
 option(SUPPORT_VR "Build for VR." OFF)
@@ -96,6 +96,7 @@ else ()
 endif()
 
 find_path(CLIB_UTIL_INCLUDE_DIRS "ClibUtil/utils.hpp")
+find_package(jsoncpp CONFIG REQUIRED)
 
 # ---- Add source files ----
 include(cmake/headerlist.cmake)
@@ -150,6 +151,7 @@ target_link_libraries(
 	${PROJECT_NAME}
 	PRIVATE
 		${CommonLibName}::${CommonLibName}
+		JsonCpp::JsonCpp
 )
 
 target_precompile_headers(

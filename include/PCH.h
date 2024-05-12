@@ -18,8 +18,6 @@
 
 #define DLLEXPORT __declspec(dllexport)
 
-namespace WinAPI = SKSE::WinAPI;
-
 using namespace std::literals;
 using namespace clib_util::singleton;
 
