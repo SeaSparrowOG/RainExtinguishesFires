@@ -34,18 +34,17 @@ namespace {
 }
 
 namespace Events {
-#define continueContainer RE::BSContainer::ForEachResult::kContinue
 #define continueEvent RE::BSEventNotifyControl::kContinue
 
 	class HitEvenetManager :
 		public EventClass<RE::TESHitEvent, HitEvenetManager> {
-	public:
+	private:
 		RE::BSEventNotifyControl ProcessEvent(const RE::TESHitEvent* a_event, RE::BSTEventSource<RE::TESHitEvent>* a_eventSource) override;
 	};
 
 	class LoadEventManager :
 		public EventClass<RE::TESCellAttachDetachEvent, LoadEventManager> {
-	public:
+	private:
 		RE::BSEventNotifyControl ProcessEvent(const RE::TESCellAttachDetachEvent* a_event, RE::BSTEventSource<RE::TESCellAttachDetachEvent>* a_eventSource) override;
 	}; 
 	
@@ -59,6 +58,15 @@ namespace Events {
 
 		//Members
 		bool wasInInterior;
+	};
+
+	class RainEventManager : public ISingleton<RainEventManager> {
+	public:
+		bool IsRaining();
+
+	private:
+		//Members
+		bool isRaining{ false };
 	};
 
 	bool RegisterForEvents();

@@ -75,6 +75,7 @@ namespace Events {
 		auto* hitRef = hitRefPtr ? hitRefPtr.get() : nullptr;
 		auto* hitBound = hitRef ? hitRef->GetBaseObject() : nullptr;
 		if (!hitBound) return continueEvent;
+		if (!CachedData::Fires::GetSingleton()->IsFireObject(hitBound)) return continueEvent;
 
 		auto hitSource = a_event->source;
 		auto* hitForm = hitSource ? RE::TESForm::LookupByID(hitSource) : nullptr;
@@ -109,13 +110,27 @@ namespace Events {
 		auto* eventReference = a_event->reference.get();
 		auto* eventBaseForm = eventReference ? eventReference->GetBaseObject() : nullptr;
 		if (!eventBaseForm) return continueEvent;
+		if (!CachedData::Fires::GetSingleton()->IsFireObject(eventBaseForm)) return continueEvent;
+
+		auto* fireData = CachedData::Fires::GetSingleton()->GetFireData(eventBaseForm);
+		if (!fireData) return continueEvent;
 
 
+		if (RainEventManager::GetSingleton()->IsRaining()) {
+			FireManipulator::ExtinguishFire(eventReference, fireData);
+		}
+		else {
+			FireManipulator::RelightFire(eventReference, fireData);
+		}
 		return continueEvent;
 	}
 
 	RE::BSEventNotifyControl ActorCellManager::ProcessEvent(const RE::BGSActorCellEvent* a_event, RE::BSTEventSource<RE::BGSActorCellEvent>* a_eventSource) {
 		if (!a_event || !a_eventSource) return continueEvent;
 		return continueEvent;
+	}
+
+	bool RainEventManager::IsRaining() {
+		return this->isRaining;
 	}
 }

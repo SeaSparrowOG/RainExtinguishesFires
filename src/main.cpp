@@ -42,7 +42,7 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
     SKSE::PluginVersionData v;
     v.PluginVersion({ Version::MAJOR, Version::MINOR, Version::PATCH });
     v.PluginName(Version::PROJECT);
-    v.AuthorName(Version::NAME);
+    v.AuthorName(Version::AUTHOR);
     v.UsesAddressLibrary();
     v.UsesUpdatedStructs();
     v.CompatibleVersions({
@@ -80,7 +80,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a_
     _loggerInfo("Version build:");
 
 #ifdef SKYRIM_AE
-    _loggerInfo("    >Latest Version.");
+    _loggerInfo("    >Latest Version. Maintained by: {}.", Version::AUTHOR);
 #else
     _loggerInfo("    >1.5 Version. Do not report ANY issues with this version.");
 #endif
