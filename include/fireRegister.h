@@ -5,8 +5,9 @@ namespace CachedData {
 
 	class Fires : public ISingleton<Fires> {
 	public:
-		void RegisterPair(RE::TESForm* a_litForm, FireData fireData);
-		void RegisterSmokeObject(RE::TESForm* a_smokeObject);
+		const FireData* GetFireData(RE::TESBoundObject* a_form);
+		void RegisterPair(RE::TESBoundObject* a_litForm, FireData fireData);
+		void RegisterSmokeObject(RE::TESBoundObject* a_smokeObject);
 		void SetFireLookupRadius(double a_newValue);
 		void SetLookupLight(double a_newValue);
 		void SetLookupSmoke(double a_newValue);
@@ -21,7 +22,7 @@ namespace CachedData {
 		double requiredOffTime{ 0.0 };
 
 		//Fire and smoke storage
-		std::unordered_map<RE::TESForm*, FireData> fireMap{};
-		std::vector<RE::TESForm*> smokeVector{};
+		std::unordered_map<RE::TESBoundObject*, FireData> fireMap{};
+		std::vector<RE::TESBoundObject*> smokeVector{};
 	};
 }

@@ -111,8 +111,8 @@ namespace JSON {
 				auto& offField = fire["Off"];
 				if (!(sourceField && sourceField.isString() && offField && offField.isString())) continue;
 
-				RE::TESForm* onForm = UtilityFunction::ParseForm(sourceField.asString());
-				RE::TESForm* offForm = UtilityFunction::ParseForm(offField.asString());
+				RE::TESBoundObject* onForm = UtilityFunction::ParseForm(sourceField.asString());
+				RE::TESBoundObject* offForm = UtilityFunction::ParseForm(offField.asString());
 				if (!onForm || !offForm) continue;
 
 				auto& lightRadius = fire["Light"];
@@ -130,9 +130,10 @@ namespace JSON {
 				if (dyndoldFound && !baseEDID.empty()) {
 					std::string dyndolodEDID = baseEDID + "_DynDOLOD_BASE";
 					auto* foundForm = RE::TESForm::LookupByEditorID(dyndolodEDID);
+					auto* dyndoForm = foundForm ? static_cast<RE::TESBoundObject*>(foundForm) : nullptr;
 
-					if (foundForm) {
-						offFireData.dyndolodVersion = foundForm;
+					if (dyndoForm) {
+						offFireData.dyndolodVersion = dyndoForm;
 						offFireData.dyndolodFire = true;
 					}
 				}
@@ -145,7 +146,7 @@ namespace JSON {
 			for (auto& smoke : smokeData) {
 				auto& smokeField = smoke["Smoke"];
 				if (smokeField && smokeField.isString()) {
-					RE::TESForm* smokeForm = UtilityFunction::ParseForm(smokeField.asString());
+					auto* smokeForm = UtilityFunction::ParseForm(smokeField.asString());
 					if (!smokeForm) continue;
 
 					cachedDataSingleton->RegisterSmokeObject(smokeForm);

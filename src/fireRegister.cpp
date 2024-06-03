@@ -44,7 +44,12 @@ namespace CachedData {
 		this->fireLookupRadius = a_newValue;
 	}
 
-	void Fires::RegisterPair(RE::TESForm* a_litForm, FireData fireData) {
+	const FireData* Fires::GetFireData(RE::TESBoundObject* a_form)
+	{
+		return nullptr;
+	}
+
+	void Fires::RegisterPair(RE::TESBoundObject* a_litForm, FireData fireData) {
 		//Note, this should NEVER happen, both are checked. But sanity check.
 		if (!a_litForm || !fireData.offVersion) return;
 		_loggerInfo("Registered new fire to extinguish. Data:");
@@ -56,8 +61,8 @@ namespace CachedData {
 
 		this->fireMap[a_litForm] = fireData;
 	}
-	void Fires::RegisterSmokeObject(RE::TESForm* a_smokeObject) {
-		if (VectorContainsElement<RE::TESForm*>(&this->smokeVector, a_smokeObject)) return;
+	void Fires::RegisterSmokeObject(RE::TESBoundObject* a_smokeObject) {
+		if (VectorContainsElement<RE::TESBoundObject*>(&this->smokeVector, a_smokeObject)) return;
 		this->smokeVector.push_back(a_smokeObject);
 
 		_loggerInfo("Registered new smoke object: ", _debugEDID(a_smokeObject).empty() ? std::to_string(a_smokeObject->formID) : _debugEDID(a_smokeObject));
