@@ -1,55 +1,27 @@
 #pragma once
 
 namespace CachedData {
-	struct FireData {
-		bool         dyndolodFire;
-		RE::TESForm* offVersion;
-		RE::TESForm* dyndolodVersion;
+#define _debugEDID clib_util::editorID::get_editorID
 
-		FireData() {
-			this->dyndolodFire = false;
-			this->dyndolodVersion = nullptr;
-			this->offVersion = nullptr;
-		}
-	};
-
-	/**
-	* FireRegistry holds settings and valid fires.
-	*/
-	class FireRegistry : public ISingleton<FireRegistry> {
+	class Fires : public ISingleton<Fires> {
 	public:
-		bool                      BuildRegistry();
-		bool                      IsOffFire(RE::TESForm* a_offForm);
-		bool                      IsOnFire(RE::TESForm* a_offForm);
-		bool                      IsDynDOLODFire(RE::TESForm* a_litFire);
-		bool                      IsSmokeObject(RE::TESForm* a_smoke);
-		bool                      IsValidObject(RE::TESForm* a_form);
-		bool                      GetCheckOcclusion();
-		bool                      GetCheckLights();
-		bool                      GetCheckSmoke();
-		FireData                  GetOffForm(RE::TESForm* a_litFire);
-		float                     GetReferenceLookupRadius();
-		float                     GetFireLookupRadius();
-		float                     GetRequiredOffTime();
-		bool                      RegisterPair(RE::TESForm* a_lit, FireData a_fireData);
-		bool                      RegisterSmokeObject(RE::TESForm* a_smoke);
-		void                      SetLookupSmoke(bool a_value);
-		void                      SetLookupLight(bool a_value);
-		void                      SetReferenceLookupRadius(float a_value);
-		void                      SetFireLookupRadius(float a_value);
-		void                      SetRequiredOffTime(float a_value);
+		void RegisterPair(RE::TESForm* a_litForm, FireData fireData);
+		void RegisterSmokeObject(RE::TESForm* a_smokeObject);
+		void SetFireLookupRadius(double a_newValue);
+		void SetLookupLight(double a_newValue);
+		void SetLookupSmoke(double a_newValue);
+		void SetReferenceLookupRadius(double a_newValue);
+		void SetRequiredOffTime(double a_newValue);
 
 	private:
-		bool                                       calculateOcclusion;
-		bool                                       lookupLights;
-		bool                                       lookupSmoke;
-		float                                      referenceLookupRadius;
-		float                                      requiredOffTime;
-		float                                      fireLookupRadius;
-		std::unordered_map<RE::TESForm*, bool>     allStoredObjects;
-		std::unordered_map<RE::TESForm*, bool>     smokeRegister;
-		std::unordered_map<RE::TESForm*, bool>     dyndolodFireRegister;
-		std::unordered_map<RE::TESForm*, bool>     reverseFireRegister;
-		std::unordered_map<RE::TESForm*, FireData> fireRegister;
+		double fireLookupRadius{ 0.0 };
+		double lookupLightRadius{ 0.0 };
+		double lookupSmokeRadius{ 0.0 };
+		double lookupREferenceRadius{ 0.0 };
+		double requiredOffTime{ 0.0 };
+
+		//Fire and smoke storage
+		std::unordered_map<RE::TESForm*, FireData> fireMap{};
+		std::vector<RE::TESForm*> smokeVector{};
 	};
 }

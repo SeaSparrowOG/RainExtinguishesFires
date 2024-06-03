@@ -45,3 +45,11 @@ namespace stl {
 		T::func = trampoline.write_call<5>(a_src, T::thunk);
 	}
 }
+
+struct FireData {
+	bool         dyndolodFire{ false };
+	double       lightLookupRadius{ -1.0 };
+	double       smokeLookupRadius{ -1.0 };
+	RE::TESForm* offVersion{ nullptr };
+	RE::TESForm* dyndolodVersion{ nullptr };
+};
