@@ -36,39 +36,48 @@ namespace {
 namespace Events {
 #define continueEvent RE::BSEventNotifyControl::kContinue
 
-	class HitEvenetManager :
-		public EventClass<RE::TESHitEvent, HitEvenetManager> {
-	private:
-		RE::BSEventNotifyControl ProcessEvent(const RE::TESHitEvent* a_event, RE::BSTEventSource<RE::TESHitEvent>* a_eventSource) override;
-	};
+	namespace Hit {
+		class HitEvenetManager :
+			public EventClass<RE::TESHitEvent, HitEvenetManager> {
+		private:
+			RE::BSEventNotifyControl ProcessEvent(const RE::TESHitEvent* a_event, RE::BSTEventSource<RE::TESHitEvent>* a_eventSource) override;
+		};
+	}
 
-	class LoadEventManager :
-		public EventClass<RE::TESCellAttachDetachEvent, LoadEventManager> {
-	private:
-		RE::BSEventNotifyControl ProcessEvent(const RE::TESCellAttachDetachEvent* a_event, RE::BSTEventSource<RE::TESCellAttachDetachEvent>* a_eventSource) override;
-	}; 
-	
-	class ActorCellManager :
-		public RE::BSTEventSink<RE::BGSActorCellEvent>,
-		public ISingleton<ActorCellManager> {
-	public:
-		bool RegisterListener();
-	private:
-		RE::BSEventNotifyControl ProcessEvent(const RE::BGSActorCellEvent* a_event, RE::BSTEventSource<RE::BGSActorCellEvent>* a_eventSource) override;
+	namespace Load {
+		class LoadEventManager :
+			public EventClass<RE::TESCellAttachDetachEvent, LoadEventManager> {
+		private:
+			RE::BSEventNotifyControl ProcessEvent(const RE::TESCellAttachDetachEvent* a_event, RE::BSTEventSource<RE::TESCellAttachDetachEvent>* a_eventSource) override;
+		};
+	}
 
-		//Members
-		bool wasInInterior;
-	};
+	namespace Cell {
+		class ActorCellManager :
+			public RE::BSTEventSink<RE::BGSActorCellEvent>,
+			public ISingleton<ActorCellManager> {
+		public:
+			bool RegisterListener();
+		private:
+			RE::BSEventNotifyControl ProcessEvent(const RE::BGSActorCellEvent* a_event, RE::BSTEventSource<RE::BGSActorCellEvent>* a_eventSource) override;
 
-	class RainEventManager : public ISingleton<RainEventManager> {
-	public:
-		bool InstallHook();
-		bool IsRaining();
+			//Members
+			bool wasInInterior;
+		};
+	}
 
-	private:
-		//Members
-		bool isRaining{ false };
-	};
+	namespace Weather {
+		class WeatherEventManager : public ISingleton<WeatherEventManager> {
+		public:
+			bool InstallHook();
+			bool IsRaining();
+			void SetRainingFlag();
+
+		private:
+			//Members
+			bool isRaining{ false };
+		};
+	}
 
 	bool RegisterForEvents();
 }

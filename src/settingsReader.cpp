@@ -1,6 +1,33 @@
 #include "settingsReader.h"
 #include "fireRegister.h"
-#include "utilityFunctions.h"
+
+namespace {
+	bool IsModPresent(std::string a_modName) {
+		return RE::TESDataHandler::GetSingleton()->LookupModByName(a_modName) ? true : false;
+	}
+
+	bool IsHex(std::string const& s) {
+		return s.compare(0, 2, "0x") == 0
+			&& s.size() > 2
+			&& s.find_first_not_of("0123456789abcdefABCDEF", 2) == std::string::npos;
+	}
+
+	RE::TESBoundObject* ParseForm(const std::string& a_identifier) {
+		if (const auto splitID = clib_util::string::split(a_identifier, "|"); splitID.size() == 2) {
+			if (!IsHex(splitID[0])) return nullptr;
+			const auto  formID = clib_util::string::to_num<RE::FormID>(splitID[0], true);
+
+			const auto& modName = splitID[1];
+			if (!IsModPresent(modName)) return nullptr;
+
+			auto* baseForm = RE::TESDataHandler::GetSingleton()->LookupForm(formID, modName);
+			return baseForm ? static_cast<RE::TESBoundObject*>(baseForm) : nullptr;
+		}
+		auto* form = RE::TESBoundObject::LookupByEditorID(a_identifier);
+		if (form) return static_cast<RE::TESBoundObject*>(form);
+		return nullptr;
+	}
+}
 
 namespace INI {
 	bool ShouldRebuildINI(CSimpleIniA* a_ini) {
@@ -115,21 +142,23 @@ namespace JSON {
 				auto& offField = fire["Off"];
 				if (!(sourceField && sourceField.isString() && offField && offField.isString())) continue;
 
-				RE::TESBoundObject* onForm = UtilityFunctions::ParseForm(sourceField.asString());
-				RE::TESBoundObject* offForm = UtilityFunctions::ParseForm(offField.asString());
+				RE::TESBoundObject* onForm = ParseForm(sourceField.asString());
+				RE::TESBoundObject* offForm = ParseForm(offField.asString());
 				if (!onForm || !offForm) continue;
 
 				auto& lightRadius = fire["Light"];
 				auto& smokeRadius = fire["Smoke"];
 
 				if (lightRadius && lightRadius.isDouble()) {
+					offFireData.disableLight = true;
 					offFireData.lightLookupRadius = lightRadius.asDouble();
 				}
 
 				if (smokeRadius && smokeRadius.isDouble()) {
+					offFireData.disableSmoke = true;
 					offFireData.smokeLookupRadius = smokeRadius.asDouble();
 				}
-
+				
 				std::string baseEDID = clib_util::editorID::get_editorID(onForm);
 				if (dyndoldFound && !baseEDID.empty()) {
 					std::string dyndolodEDID = baseEDID + "_DynDOLOD_BASE";
@@ -150,7 +179,7 @@ namespace JSON {
 			for (auto& smoke : smokeData) {
 				auto& smokeField = smoke["Smoke"];
 				if (smokeField && smokeField.isString()) {
-					auto* smokeForm = UtilityFunctions::ParseForm(smokeField.asString());
+					auto* smokeForm = ParseForm(smokeField.asString());
 					if (!smokeForm) continue;
 
 					cachedDataSingleton->RegisterSmokeObject(smokeForm);

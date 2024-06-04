@@ -5,5 +5,4 @@ set(headers ${headers}
 	include/fireRegister.h
 	include/papyrus.h
 	include/settingsReader.h
-	include/utilityFunctions.h
 )
