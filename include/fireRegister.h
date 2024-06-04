@@ -22,6 +22,8 @@ namespace CachedData {
 		void RegisterSmokeObject(RE::TESBoundObject* a_litForm);
 		void UpdateSetting(Setting a_setting, bool a_settingBool = false, double a_settingDouble = 0.0);
 
+		void Report();
+
 	private:
 		bool checkSmoke{ false };
 		bool checkLight{ false };

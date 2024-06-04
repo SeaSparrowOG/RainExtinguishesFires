@@ -27,7 +27,19 @@ namespace Events {
 
 	namespace Weather {
 		bool WeatherEventManager::InstallHook() {
+			REL::Relocation<std::uintptr_t> target{ RELOCATION_ID(25684, 26231), OFFSET(0x44F, 0x46C) }; \
+			stl::write_thunk_call<WeatherEventManager>(target.address());
 			return true;
+		}
+
+		void WeatherEventManager::thunk(RE::TESRegion* a_region, RE::TESWeather* a_currentWeather) {
+			if (currentWeather != a_currentWeather) {
+				currentWeather = a_currentWeather;
+			}
+			func(a_region, a_currentWeather);
+		}
+
+		void WeatherEventManager::ProcessWeatherChange(bool wasRaining, bool isRaining) {
 		}
 
 		bool WeatherEventManager::IsRaining() {
@@ -48,8 +60,11 @@ namespace Events {
 		if (!success) {
 			Hit::HitEvenetManager::GetSingleton()->UnregisterListener();
 			Load::LoadEventManager::GetSingleton()->UnregisterListener();
+			return false;
 		}
-		return success;
+
+		_loggerInfo("Registered for game events and installed weather hook.");
+		return true;
 	}
 
 }

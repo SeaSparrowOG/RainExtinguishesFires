@@ -67,26 +67,43 @@ namespace CachedData {
         if (!(a_litForm && fireData.offVersion)) return;
         if (this->fireDataMap.contains(a_litForm)) return;
 
-        bool hasUniqueLightData = fireData.disableLight;
-        if (!hasUniqueLightData) {
-            fireData.disableLight = this->checkLight;
-            fireData.lightLookupRadius = this->lookupLightRadius;
-        }
-        else {
-            if (fireData.lightLookupRadius < 50.0) fireData.lightLookupRadius = 50.0;
-            if (fireData.lightLookupRadius > 1000.0) fireData.lightLookupRadius = 1000.0;
-        }
-
-        bool hasUniqueSmokeData = fireData.disableSmoke;
-        if (!hasUniqueSmokeData) {
-            fireData.disableSmoke = this->checkSmoke;
-            fireData.smokeLookupRadius = this->lookupSmokeRadius;
-        }
-        else {
-            if (fireData.smokeLookupRadius < 50.0) fireData.smokeLookupRadius = 50.0;
-            if (fireData.smokeLookupRadius > 1000.0) fireData.smokeLookupRadius = 1000.0;
-        }
+        fireData.disableLight = this->checkLight;
+        fireData.lightLookupRadius = this->lookupLightRadius;
+        fireData.disableSmoke = this->checkSmoke;
+        fireData.smokeLookupRadius = this->lookupSmokeRadius;
 
         this->fireDataMap[a_litForm] = fireData;
+    }
+
+    void Fires::Report() {
+        std::vector<std::pair<RE::TESBoundObject*, std::string>> orderedPairVector{};
+
+        for (auto& pair : this->fireDataMap) {
+            auto edid = _debugEDID(pair.first);
+            if (edid.empty()) edid = std::to_string(pair.first->GetLocalFormID());
+            auto newPair = std::make_pair(pair.first, edid);
+            orderedPairVector.push_back(newPair);
+        }
+        std::sort(orderedPairVector.begin(), orderedPairVector.end(), [](std::pair<RE::TESBoundObject*, std::string>& a, std::pair<RE::TESBoundObject*, std::string>& b) {
+            return a.second < b.second;
+            });
+
+        _loggerInfo("Finished reading settings. Registered {} valid fires.", this->fireDataMap.size());
+        _loggerInfo("    Check Lights: {}\n    Check Smoke: {}\n    Light Radius: {}\n    Smoke Radius: {}", 
+            this->checkLight, this->checkSmoke, this->lookupLightRadius, this->lookupSmokeRadius);
+        _loggerInfo("----------------------------------------------------------------");
+        for (auto& vecObj : orderedPairVector) {
+            auto& pair = this->fireDataMap[vecObj.first];
+            _loggerInfo("    >{}", vecObj.second);
+
+
+            auto edid = _debugEDID(pair.offVersion);
+            if (edid.empty()) edid = std::to_string(pair.offVersion->formID);
+            _loggerInfo("        ->Off Version: {}", edid);
+
+            if (!pair.dyndolodFire) continue;
+            edid = _debugEDID(pair.dyndolodVersion);
+            _loggerInfo("        ->DynDOLOD Version: {}", edid);
+        }
     }
 }

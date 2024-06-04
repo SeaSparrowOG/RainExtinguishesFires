@@ -1,5 +1,6 @@
 #include <spdlog/sinks/basic_file_sink.h>
 
+#include "fireRegister.h"
 #include "eventListener.h"
 #include "papyrus.h"
 #include "settingsReader.h"
@@ -22,11 +23,22 @@ void SetupLog() {
 }
 
 void MessageHandler(SKSE::MessagingInterface::Message* a_message) {
+    bool success = true;
     switch (a_message->type) {
     case SKSE::MessagingInterface::kDataLoaded:
-        Settings::InitializeINISettings();
-        Settings::InitializeFireSettings();
-        Events::RegisterForEvents();
+        if (!Events::RegisterForEvents()) success = false;
+        if (success && !Settings::InitializeINISettings()) success = false;
+        if (success && !Settings::InitializeFireSettings()) success = false;
+
+        if (!success) {
+            _loggerInfo("One or more failures occured during loaded.");
+        }
+        else {
+            _loggerInfo("Finished startup tasks successfully.");
+            CachedData::Fires::GetSingleton()->Report();
+        }
+        _loggerInfo("----------------------------------------------------------------");
+
         break;
     case SKSE::MessagingInterface::kNewGame:
     case SKSE::MessagingInterface::kPostLoadGame:
@@ -84,6 +96,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a_
 #else
     _loggerInfo("    >1.5 Version. Do not report ANY issues with this version.");
 #endif
+    _loggerInfo("----------------------------------------------------------------");
 
     SKSE::Init(a_skse);
     auto messaging = SKSE::GetMessagingInterface();

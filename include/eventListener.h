@@ -73,6 +73,12 @@ namespace Events {
 			bool IsRaining();
 			void SetRainingFlag();
 
+			//Hook stuff
+			static inline RE::TESWeather* currentWeather{ nullptr };
+			static inline void thunk(RE::TESRegion* a_region, RE::TESWeather* a_currentWeather);
+			static inline REL::Relocation<decltype(thunk)> func;
+			void ProcessWeatherChange(bool wasRaining, bool isRaining);
+
 		private:
 			//Members
 			bool isRaining{ false };

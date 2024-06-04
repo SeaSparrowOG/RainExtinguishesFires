@@ -71,12 +71,12 @@ namespace INI {
 		}
 		
 		auto* cachedDataSingleton = CachedData::Fires::GetSingleton();
-		cachedDataSingleton->UpdateSetting(CachedData::Setting::kReferenceRadius,ini.GetDoubleValue("General", "fReferenceLookupRadius", 300.0));
-		cachedDataSingleton->UpdateSetting(CachedData::Setting::kResetTime, ini.GetDoubleValue("General", "fDaysToReset", 3.0));
+		cachedDataSingleton->UpdateSetting(CachedData::Setting::kReferenceRadius, false, ini.GetDoubleValue("General", "fReferenceLookupRadius", 300.0));
+		cachedDataSingleton->UpdateSetting(CachedData::Setting::kResetTime, false, ini.GetDoubleValue("General", "fDaysToReset", 3.0));
 		cachedDataSingleton->UpdateSetting(CachedData::Setting::kLightEnabled, ini.GetBoolValue("General", "bSquashLights", true));
 		cachedDataSingleton->UpdateSetting(CachedData::Setting::kSmokeEnabled, ini.GetBoolValue("General", "bSquashSmoke", true));
-		cachedDataSingleton->UpdateSetting(CachedData::Setting::kLightRadius, ini.GetDoubleValue("General", "fLightLookupRadius", 300.0));
-		cachedDataSingleton->UpdateSetting(CachedData::Setting::kSmokeRadius, ini.GetDoubleValue("General", "fSmokeLookupRadius", 300.0));
+		cachedDataSingleton->UpdateSetting(CachedData::Setting::kLightRadius, false, ini.GetDoubleValue("General", "fLightLookupRadius", 300.0));
+		cachedDataSingleton->UpdateSetting(CachedData::Setting::kSmokeRadius, false, ini.GetDoubleValue("General", "fSmokeLookupRadius", 300.0));
 
 		std::filesystem::path custom{ "./Data/SKSE/Plugins/RainExtinguishesFires_custom.ini" };
 		if (!std::filesystem::exists(f)) {
@@ -145,19 +145,6 @@ namespace JSON {
 				RE::TESBoundObject* onForm = ParseForm(sourceField.asString());
 				RE::TESBoundObject* offForm = ParseForm(offField.asString());
 				if (!onForm || !offForm) continue;
-
-				auto& lightRadius = fire["Light"];
-				auto& smokeRadius = fire["Smoke"];
-
-				if (lightRadius && lightRadius.isDouble()) {
-					offFireData.disableLight = true;
-					offFireData.lightLookupRadius = lightRadius.asDouble();
-				}
-
-				if (smokeRadius && smokeRadius.isDouble()) {
-					offFireData.disableSmoke = true;
-					offFireData.smokeLookupRadius = smokeRadius.asDouble();
-				}
 				
 				std::string baseEDID = clib_util::editorID::get_editorID(onForm);
 				if (dyndoldFound && !baseEDID.empty()) {
