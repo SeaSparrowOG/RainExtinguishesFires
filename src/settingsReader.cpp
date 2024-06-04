@@ -43,9 +43,6 @@ namespace INI {
 		}
 		
 		auto settingsSingleton = CachedData::Fires::GetSingleton();
-		settingsSingleton->SetLookupLight(ini.GetBoolValue("General", "bSquashLights", true));
-		settingsSingleton->SetLookupSmoke(ini.GetBoolValue("General", "bSquashSmoke", true));
-		settingsSingleton->SetFireLookupRadius(ini.GetDoubleValue("General", "fFireLookupRadius", 0.0));
 		settingsSingleton->SetReferenceLookupRadius(ini.GetDoubleValue("General", "fReferenceLookupRadius", 300.0));
 		settingsSingleton->SetRequiredOffTime(ini.GetDoubleValue("General", "fDaysToReset", 3.0));
 
@@ -57,18 +54,6 @@ namespace INI {
 		CSimpleIniA customINI;
 		customINI.SetUnicode();
 		customINI.LoadFile(custom.c_str());
-
-		if (customINI.KeyExists("General", "bSquashLights")) {
-			settingsSingleton->SetLookupLight(customINI.GetBoolValue("General", "bSquashLights", true));
-		}
-
-		if (customINI.KeyExists("General", "bSquashSmoke")) {
-			settingsSingleton->SetLookupSmoke(customINI.GetBoolValue("General", "bSquashSmoke", true));
-		}
-
-		if (customINI.KeyExists("General", "fFireLookupRadius")) {
-			settingsSingleton->SetFireLookupRadius(customINI.GetDoubleValue("General", "fFireLookupRadius", 300.0));
-		}
 
 		if (customINI.KeyExists("General", "fReferenceLookupRadius")) {
 			settingsSingleton->SetReferenceLookupRadius(customINI.GetDoubleValue("General", "fReferenceLookupRadius", 300.0));

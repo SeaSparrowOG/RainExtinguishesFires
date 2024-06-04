@@ -48,8 +48,11 @@ namespace stl {
 
 struct FireData {
 	bool         dyndolodFire{ false };
+	bool         disableLight{ false };
+	bool         disableSmoke{ false };
 	double       lightLookupRadius{ -1.0 };
 	double       smokeLookupRadius{ -1.0 };
+	double       referenceLookupRadius{ -1.0 };
 	RE::TESBoundObject* offVersion{ nullptr };
 	RE::TESBoundObject* dyndolodVersion{ nullptr };
 };

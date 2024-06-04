@@ -4,49 +4,37 @@
 namespace {
 #define continueContainer RE::BSContainer::ForEachResult::kContinue
 
-	/*
-	* Returns a vector of nearby objects that can be extinguished.
-	* @param a_center The fire from which to find the matching objects.
-	* @param a_radius The radius over which to search.
-	* @return Vector of references.
-	*/
-	std::vector<RE::TESObjectREFR*> GetNearbyMatchingObjects(RE::TESObjectREFR* a_center, float a_radius, CachedData::Fires* a_fireRegistry) {
-		std::vector<RE::TESObjectREFR*> response;
+	bool FreezeUnfreezeReference(RE::TESObjectREFR* a_ref, bool a_add) {
+		auto* fireRegister = CachedData::Fires::GetSingleton();
+		if (a_add) {
+			if (fireRegister->IsFireFrozen(a_ref)) return false;
+			fireRegister->FreezeFire(a_ref);
+		}
+		else {
+			if (!fireRegister->IsFireFrozen(a_ref)) return false;
+			fireRegister->UnFreezeFire(a_ref);
+		}
+		return true;
+	}
+
+	std::vector<RE::TESObjectREFR*> GetNearbyAdditionalExtinguishes(RE::TESObjectREFR* a_center, const FireData* a_data) {
+		std::vector<RE::TESObjectREFR*> response{};
 		RE::TESObjectREFR* foundLight = nullptr;
 		RE::TESObjectREFR* foundSmoke = nullptr;
 		RE::TESObjectREFR* foundDynDOLODFire = nullptr;
-		float lastLightDistance = a_radius;
-		float lastDynDOLODDistance = a_radius;
-		float lastSmokeDistance = a_radius;
+		double lastLightDistance = a_data->lightLookupRadius;
+		double lastDynDOLODDistance = a_data->referenceLookupRadius;
+		double lastSmokeDistance = a_data->smokeLookupRadius;
 		auto refLocation = a_center->GetPosition();
+		auto radius = std::max({ lastLightDistance, lastDynDOLODDistance, lastSmokeDistance });
 
 		if (const auto TES = RE::TES::GetSingleton(); TES) {
-			TES->ForEachReferenceInRange(a_center, a_radius, [&](RE::TESObjectREFR* a_ref) {
-				if (a_fireRegistry->IsFireFrozen(a_ref)) return continueContainer;
-				if (!a_ref->Is3DLoaded()) return continueContainer;
-				if (a_ref->IsDisabled()) return continueContainer;
-
-				const auto baseBound = a_ref ? a_ref->GetBaseObject() : nullptr;
-				bool isManaged = a_fireRegistry->IsFireObject(baseBound);
-				if (!isManaged) return RE::BSContainer::ForEachResult::kContinue;
-
-				float distance = a_ref->data.location.GetDistance(a_center->data.location);
-				if (a_fireRegistry->IsSmokeObject(baseBound) && a_fireRegistry->GetCheckSmoke() && distance < lastSmokeDistance) {
-					foundSmoke = a_ref;
-				}
-				else if (a_fireRegistry->IsDynDOLODFire(baseBound) && distance < lastDynDOLODDistance) {
-					std::string edid = clib_util::editorID::get_editorID(baseBound);
-					std::string originalEdid = clib_util::editorID::get_editorID(a_center->GetBaseObject()->As<RE::TESForm>());
-					if (!originalEdid.empty() && edid.contains(originalEdid)) {
-						foundDynDOLODFire = a_ref;
-					}
-				}
-				else if (baseBound->Is(RE::FormType::Light) && a_fireRegistry->GetCheckLights() && distance < lastLightDistance) {
-					foundLight = a_ref;
-				}
+			TES->ForEachReferenceInRange(a_center, radius, [&](RE::TESObjectREFR* a_ref) {
+				
 				return continueContainer;
 				});
 		}
+
 		if (foundLight) {
 			response.push_back(foundLight);
 		}
@@ -56,14 +44,33 @@ namespace {
 		if (foundDynDOLODFire) {
 			response.push_back(foundDynDOLODFire);
 		}
-
 		return response;
 	}
 }
 namespace FireManipulator {
-    void ExtinguishFire(RE::TESObjectREFR* a_fire, const FireData* a_data, bool ignoreConditions) {
+    void RelightFire(RE::TESObjectREFR* a_fire, const FireData* a_data) {
+
     }
 
-    void RelightFire(RE::TESObjectREFR* a_fire, const FireData* a_data, bool ignoreConditions) {
+    void ExtinguishFire(RE::TESObjectREFR* a_fire, const FireData* a_data) {
+		auto* fireRegistry = CachedData::Fires::GetSingleton();
+		if (fireRegistry->IsFireFrozen(a_fire)) return;
+		if (!a_fire || !a_data) return;
+
+		auto* referenceExtraList = &a_fire->extraList;
+		bool hasEnableChildren = referenceExtraList ? referenceExtraList->HasType(RE::ExtraDataType::kEnableStateChildren) : false;
+		bool hasEnableParents = referenceExtraList ? referenceExtraList->HasType(RE::ExtraDataType::kEnableStateParent) : false;
+		bool dyndolodFire = a_data->dyndolodFire;
+
+		if (hasEnableParents || (hasEnableChildren && !dyndolodFire)) {
+			return;
+		}
+		else if (hasEnableChildren && dyndolodFire) {
+			std::string editorID = clib_util::editorID::get_editorID(a_fire->GetBaseObject()->As<RE::TESForm>());
+			if (!editorID.contains("DYNDOLOD")) return;
+		}
+		else if (hasEnableChildren) {
+			return;
+		}
     }
 }

@@ -14,22 +14,10 @@ namespace {
 }
 
 namespace CachedData {
-	void Fires::SetLookupLight(double a_newValue) {
-		if (a_newValue < 10.0) a_newValue = 10.0;
-		if (a_newValue > 1000.0) a_newValue = 1000.0;
-		this->lookupLightRadius = a_newValue;
-	}
-
-	void Fires::SetLookupSmoke(double a_newValue) {
-		if (a_newValue < 10.0) a_newValue = 10.0;
-		if (a_newValue > 1000.0) a_newValue = 1000.0;
-		this->lookupSmokeRadius = a_newValue;
-	}
-
 	void Fires::SetReferenceLookupRadius(double a_newValue) {
 		if (a_newValue < 10.0) a_newValue = 10.0;
 		if (a_newValue > 1000.0) a_newValue = 1000.0;
-		this->lookupREferenceRadius = a_newValue;
+		this->lookupReferenceRadius = a_newValue;
 	}
 
 	void Fires::SetRequiredOffTime(double a_newValue) {
@@ -38,14 +26,16 @@ namespace CachedData {
 		this->requiredOffTime = a_newValue;
 	}
 
-	void Fires::SetFireLookupRadius(double a_newValue) {
-		if (a_newValue < 10.0) a_newValue = 10.0;
-		if (a_newValue > 1000.0) a_newValue = 1000.0;
-		this->fireLookupRadius = a_newValue;
-	}
-
 	bool Fires::IsFireFrozen(RE::TESObjectREFR* a_fire) {
 		return this->frozenFires.contains(a_fire);
+	}
+
+	void Fires::FreezeFire(RE::TESObjectREFR* a_fire) {
+		this->frozenFires[a_fire] = true;
+	}
+
+	void Fires::UnFreezeFire(RE::TESObjectREFR* a_fire) {
+		this->frozenFires.erase(a_fire);
 	}
 
 	const FireData* Fires::GetFireData(RE::TESBoundObject* a_form) {
@@ -58,6 +48,10 @@ namespace CachedData {
 
 	bool Fires::GetCheckLights() {
 		return this->checkLight;
+	}
+
+	double Fires::GetReferenceLookupRadius() {
+		return this->lookupReferenceRadius;
 	}
 
 	bool Fires::GetCheckSmoke() {
@@ -82,8 +76,6 @@ namespace CachedData {
 		_loggerInfo("Registered new fire to extinguish. Data:");
 		_loggerInfo("    >Lit Version: {}", _debugEDID(a_litForm).empty() ? std::to_string(a_litForm->formID) : _debugEDID(a_litForm));
 		_loggerInfo("    >Off Version: {}", _debugEDID(fireData.offVersion).empty() ? std::to_string(fireData.offVersion->formID) : _debugEDID(fireData.offVersion));
-		_loggerInfo("    >Light lookup radius: {}", fireData.lightLookupRadius > 0.0 ? fireData.lightLookupRadius : this->lookupLightRadius);
-		_loggerInfo("    >Smoke lookup radius: {}", fireData.smokeLookupRadius > 0.0 ? fireData.smokeLookupRadius : this->lookupSmokeRadius);
 		_loggerInfo("    >Dyndolod fire: {}", fireData.dyndolodFire ? _debugEDID(fireData.dyndolodVersion) : "Not a DynDOLOD fire.");
 
 		this->fireMap[a_litForm] = fireData;
