@@ -1,6 +1,6 @@
 #pragma once
 
-namespace UtilityFunction {
+namespace UtilityFunctions {
 	bool IsModPresent(std::string a_modName) {
 		return RE::TESDataHandler::GetSingleton()->LookupModByName(a_modName) ? true : false;
 	}
@@ -9,6 +9,11 @@ namespace UtilityFunction {
 		return s.compare(0, 2, "0x") == 0
 			&& s.size() > 2
 			&& s.find_first_not_of("0123456789abcdefABCDEF", 2) == std::string::npos;
+	}
+
+	template <typename T>
+	bool IsFormInVector(const std::vector<T>* a_vec, T a_form) {
+		return std::find(a_vec->begin(), a_vec->end(), a_form) != a_vec->end();
 	}
 
 	RE::TESBoundObject* ParseForm(const std::string& a_identifier) {

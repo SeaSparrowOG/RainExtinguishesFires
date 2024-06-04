@@ -62,6 +62,7 @@ namespace Events {
 
 	class RainEventManager : public ISingleton<RainEventManager> {
 	public:
+		bool InstallHook();
 		bool IsRaining();
 
 	private:
