@@ -14,7 +14,15 @@ namespace CachedData {
     }
 
     bool Fires::IsFireObject(RE::TESBoundObject* a_form) {
+        return IsLitFire(a_form) || IsUnLitFire(a_form);
+    }
+
+    bool Fires::IsLitFire(RE::TESBoundObject* a_form) {
         return IsFormInVector<RE::TESBoundObject*>(&this->validFires, a_form);
+    }
+
+    bool CachedData::Fires::IsUnLitFire(RE::TESBoundObject* a_form) {
+        return IsFormInVector<RE::TESBoundObject*>(&this->validOffFires, a_form);
     }
 
     bool Fires::IsSmokeObject(RE::TESBoundObject* a_form) {
@@ -73,6 +81,9 @@ namespace CachedData {
         fireData.smokeLookupRadius = this->lookupSmokeRadius;
 
         this->fireDataMap[a_litForm] = fireData;
+        this->validFires.push_back(a_litForm);
+        this->validOffFires.push_back(fireData.offVersion);
+        if (fireData.dyndolodFire) this->dyndolodFires.push_back(fireData.dyndolodVersion);
     }
 
     void Fires::Report() {

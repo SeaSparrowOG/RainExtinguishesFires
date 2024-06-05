@@ -58,11 +58,12 @@ namespace Events {
 			public ISingleton<ActorCellManager> {
 		public:
 			bool RegisterListener();
+			void UpdateCellSetting();
 		private:
 			RE::BSEventNotifyControl ProcessEvent(const RE::BGSActorCellEvent* a_event, RE::BSTEventSource<RE::BGSActorCellEvent>* a_eventSource) override;
 
 			//Members
-			bool wasInInterior;
+			bool wasInInterior{ false };
 		};
 	}
 
@@ -71,13 +72,13 @@ namespace Events {
 		public:
 			bool InstallHook();
 			bool IsRaining();
-			void SetRainingFlag();
+			void SetRainingFlag(bool a_raining);
+			void UpdateWeatherFlag();
 
 			//Hook stuff
 			static inline RE::TESWeather* currentWeather{ nullptr };
 			static inline void thunk(RE::TESRegion* a_region, RE::TESWeather* a_currentWeather);
 			static inline REL::Relocation<decltype(thunk)> func;
-			void ProcessWeatherChange(bool wasRaining, bool isRaining);
 
 		private:
 			//Members

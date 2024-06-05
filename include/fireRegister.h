@@ -16,6 +16,8 @@ namespace CachedData {
 	public:
 		const FireData* GetFireData(RE::TESBoundObject* a_form);
 		bool IsFireObject(RE::TESBoundObject* a_form);
+		bool IsLitFire(RE::TESBoundObject* a_form);
+		bool IsUnLitFire(RE::TESBoundObject* a_form);
 		bool IsSmokeObject(RE::TESBoundObject* a_form);
 		bool IsDynDOLODFire(RE::TESBoundObject* a_form);
 		void RegisterPair(RE::TESBoundObject* a_litForm, FireData fireData);
@@ -37,6 +39,7 @@ namespace CachedData {
 		std::unordered_map<RE::TESObjectREFR*, bool> frozenFires{};
 
 		std::vector<RE::TESBoundObject*> validFires{};
+		std::vector<RE::TESBoundObject*> validOffFires{};
 		std::vector<RE::TESBoundObject*> dyndolodFires{};
 		std::vector<RE::TESBoundObject*> smokeVector{};
 	};
