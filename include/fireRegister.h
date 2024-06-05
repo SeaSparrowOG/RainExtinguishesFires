@@ -36,7 +36,6 @@ namespace CachedData {
 
 		//Fire and smoke storage
 		std::unordered_map<RE::TESBoundObject*, FireData> fireDataMap{};
-		std::unordered_map<RE::TESObjectREFR*, bool> frozenFires{};
 
 		std::vector<RE::TESBoundObject*> validFires{};
 		std::vector<RE::TESBoundObject*> validOffFires{};

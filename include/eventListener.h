@@ -52,22 +52,9 @@ namespace Events {
 		};
 	}
 
-	namespace Cell {
-		class ActorCellManager :
-			public RE::BSTEventSink<RE::BGSActorCellEvent>,
-			public ISingleton<ActorCellManager> {
-		public:
-			bool RegisterListener();
-			void UpdateCellSetting();
-		private:
-			RE::BSEventNotifyControl ProcessEvent(const RE::BGSActorCellEvent* a_event, RE::BSTEventSource<RE::BGSActorCellEvent>* a_eventSource) override;
-
-			//Members
-			bool wasInInterior{ false };
-		};
-	}
-
 	namespace Weather {
+#define rainyFlag RE::TESWeather::WeatherDataFlag::kRainy
+#define snowyFlag RE::TESWeather::WeatherDataFlag::kSnow 
 		class WeatherEventManager : public ISingleton<WeatherEventManager> {
 		public:
 			bool InstallHook();

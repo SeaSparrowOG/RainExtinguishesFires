@@ -15,17 +15,6 @@ namespace Events {
 			auto* eventSpell = eventSource ? eventSource->As<RE::SpellItem>() : nullptr;
 			if (!(eventWeapon || eventSpell)) return continueEvent;
 
-			//Debug Block
-			_loggerInfo("Registered hit on {}", eventTarget->GetBaseObject() ? _debugEDID(eventTarget->GetBaseObject()) : "No base form");
-			if (a_event->target.get()) _loggerInfo("    Struck by: {}", a_event->cause.get()? a_event->cause.get()->GetName() : "No actor");
-			if (eventWeapon) {
-				_loggerInfo("    Struck with (weapon): {}", _debugEDID(eventWeapon));
-				
-			}
-			if (eventSpell) {
-				_loggerInfo("    Struck with (spell): {}", _debugEDID(eventSpell));
-			}
-
 			return continueEvent;
 		}
 	}
@@ -40,39 +29,22 @@ namespace Events {
 			bool isValidFire = eventBaseObject ? CachedData::Fires::GetSingleton()->IsFireObject(eventBaseObject) : false;
 			if (!isValidFire) return continueEvent;
 
-			_loggerInfo("Loaded {}", _debugEDID(eventBaseObject));
-			return continueEvent;
-		}
-	}
+			auto* parentCell = eventReference->GetParentCell();
+			bool isInterior = parentCell ? parentCell->IsInteriorCell() : true;
+			if (isInterior) return continueEvent;
 
-	namespace Cell {
-		bool ActorCellManager::RegisterListener() {
-			RE::PlayerCharacter::GetSingleton()->AddEventSink(this);
-			return true;
-		}
+			bool isRaining = Events::Weather::WeatherEventManager::GetSingleton()->IsRaining();
+			if (isRaining && CachedData::Fires::GetSingleton()->IsLitFire(eventBaseObject)) {
+				auto* fireData = CachedData::Fires::GetSingleton()->GetFireData(eventBaseObject);
+				if (!fireData) return continueEvent;
 
-		void ActorCellManager::UpdateCellSetting() {
-			auto* playerRef = RE::PlayerCharacter::GetSingleton()->AsReference();
-			auto* playerCell = playerRef ? playerRef->GetParentCell() : nullptr;
-			this->wasInInterior = playerCell ? playerCell->IsInteriorCell() : false;
-			_loggerInfo("Updated player cell {} to {}", playerCell ? _debugEDID(playerCell) : "NULL", this->wasInInterior);
-		}
-
-		RE::BSEventNotifyControl ActorCellManager::ProcessEvent(const RE::BGSActorCellEvent* a_event, RE::BSTEventSource<RE::BGSActorCellEvent>* a_eventSource) {
-			if (!(a_event && a_eventSource)) return continueEvent;
-			auto* eventActor = a_event->actor.get().get();
-			if (!eventActor->IsPlayer()) return continueEvent;
-
-			auto* cellForm = RE::TESForm::LookupByID(a_event->cellID);
-			auto* cell = cellForm ? cellForm->As<RE::TESObjectCELL>() : nullptr;
-			if (!cell) return continueEvent;
-
-			if (cell->IsInteriorCell() && !this->wasInInterior) {
-				_loggerInfo("Moved from exterior to interior");
+				FireManipulator::Manager::GetSingleton()->ExtinguishFire(eventReference, fireData);
 			}
-			else if (!cell->IsInteriorCell() && this->wasInInterior) {
-				_loggerInfo("Moved from interior to exterior");
+			else if (!isRaining && CachedData::Fires::GetSingleton()->IsUnLitFire(eventBaseObject)) {
+				FireManipulator::Manager::GetSingleton()->RelightFire(eventReference);
 			}
+
+			_loggerInfo("Loaded object {}", _debugEDID(eventBaseObject));
 			return continueEvent;
 		}
 	}
@@ -90,15 +62,15 @@ namespace Events {
 			if (a_currentWeather && currentWeather != a_currentWeather) {
 				currentWeather = a_currentWeather;
 			} 
-			if (lastWeather && currentWeather != lastWeather) {
-				bool currentlyRaining = currentWeather ? currentWeather->data.flags & RE::TESWeather::WeatherDataFlag::kRainy
-					|| currentWeather->data.flags & RE::TESWeather::WeatherDataFlag::kSnow : false;
+			bool currentlyRaining = currentWeather ? currentWeather->data.flags & rainyFlag
+				|| currentWeather->data.flags & snowyFlag : false;
+			WeatherEventManager::GetSingleton()->SetRainingFlag(currentlyRaining);
 
-				if (WeatherEventManager::GetSingleton()->IsRaining() && !currentlyRaining 
+			if (lastWeather && currentWeather != lastWeather) {
+				if (WeatherEventManager::GetSingleton()->IsRaining() && !currentlyRaining
 					|| !WeatherEventManager::GetSingleton()->IsRaining() && currentlyRaining) {
-					_loggerInfo("Hook triggered, is raining: {}", currentlyRaining);
+					FireManipulator::Manager::GetSingleton()->ExtinguishAllFires();
 				}
-				WeatherEventManager::GetSingleton()->SetRainingFlag(currentlyRaining);
 			}
 		}
 
@@ -114,7 +86,7 @@ namespace Events {
 			auto* skyrimWeather = RE::Sky::GetSingleton()->currentWeather;
 			bool isRainy = skyrimWeather ? skyrimWeather->data.flags & RE::TESWeather::WeatherDataFlag::kRainy
 				|| skyrimWeather->data.flags & RE::TESWeather::WeatherDataFlag::kSnow : false;
-			_loggerInfo("Set weather flag for {} to rainy: {}", skyrimWeather ? _debugEDID(skyrimWeather) : "NULL", isRainy);
+			this->isRaining = isRainy;
 		}
 	}
 
@@ -123,7 +95,6 @@ namespace Events {
 		if (!Weather::WeatherEventManager::GetSingleton()->InstallHook()) success = false;
 		if (success && !Hit::HitEvenetManager::GetSingleton()->RegisterListener()) success = false;
 		if (success && !Load::LoadEventManager::GetSingleton()->RegisterListener()) success = false;
-		if (success && !Cell::ActorCellManager::GetSingleton()->RegisterListener()) success = false;
 
 		if (!success) {
 			Hit::HitEvenetManager::GetSingleton()->UnregisterListener();

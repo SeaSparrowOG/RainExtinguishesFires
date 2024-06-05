@@ -43,7 +43,6 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message) {
     case SKSE::MessagingInterface::kNewGame:
     case SKSE::MessagingInterface::kPostLoadGame:
         if (!success) break;
-        Events::Cell::ActorCellManager::GetSingleton()->UpdateCellSetting();
         Events::Weather::WeatherEventManager::GetSingleton()->UpdateWeatherFlag();
         break;
     default:

@@ -11,9 +11,12 @@ namespace FireManipulator {
 		this->frozenRefs.erase(a_ref);
 	}
 
+	void Manager::ExtinguishAllFires() {
+	}
+
 	void Manager::ExtinguishFire(RE::TESObjectREFR* a_fire, const FireData* a_data) {
 	}
 
-	void Manager::RelightFire(RE::TESObjectREFR* a_fire, const FireData* a_data) {
+	void Manager::RelightFire(RE::TESObjectREFR* a_fire) {
 	}
 }
