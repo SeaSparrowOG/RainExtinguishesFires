@@ -43,8 +43,6 @@ namespace Events {
 			else if (!isRaining && CachedData::Fires::GetSingleton()->IsUnLitFire(eventBaseObject)) {
 				FireManipulator::Manager::GetSingleton()->RelightFire(eventReference);
 			}
-
-			_loggerInfo("Loaded object {}", _debugEDID(eventBaseObject));
 			return continueEvent;
 		}
 	}

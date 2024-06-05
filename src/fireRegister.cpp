@@ -106,7 +106,8 @@ namespace CachedData {
         for (auto& vecObj : orderedPairVector) {
             auto& pair = this->fireDataMap[vecObj.first];
             _loggerInfo("    >{}", vecObj.second);
-
+            _loggerInfo("        ->Light lookup: {}", pair.lightLookupRadius);
+            _loggerInfo("        ->Smoke lookup: {}", pair.smokeLookupRadius);
 
             auto edid = _debugEDID(pair.offVersion);
             if (edid.empty()) edid = std::to_string(pair.offVersion->formID);

@@ -26,6 +26,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message) {
     bool success = true;
     switch (a_message->type) {
     case SKSE::MessagingInterface::kDataLoaded:
+        SKSE::GetPapyrusInterface()->Register(Papyrus::RegisterFunctions);
         if (!Events::RegisterForEvents()) success = false;
         if (success && !Settings::InitializeINISettings()) success = false;
         if (success && !Settings::InitializeFireSettings()) success = false;
