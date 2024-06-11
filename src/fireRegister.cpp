@@ -9,7 +9,7 @@ namespace {
 
 namespace CachedData {
     const FireData* Fires::GetFireData(RE::TESBoundObject* a_form) {
-        if (this->fireDataMap.contains(a_form)) return &this->fireDataMap[a_form];
+        if (a_form && this->fireDataMap.contains(a_form)) return &this->fireDataMap[a_form];
         return nullptr;
     }
 

@@ -1,8 +1,22 @@
 #include "fireManipulator.h"
 #include "fireRegister.h"
 
-namespace {
-	std::vector<RE::TESObjectREFR*> GetNearbyAssociatedReferences(RE::TESObjectREFR* a_center, const FireData* a_data) {
+namespace FireManipulator {
+	void Manager::FreezeReference(RE::TESObjectREFR* a_ref) {
+		if (this->frozenRefs.contains(a_ref)) return;
+		this->frozenRefs[a_ref] = true;
+	}
+
+	void Manager::UnFreezeReference(RE::TESObjectREFR* a_ref) {
+		if (!this->frozenRefs.contains(a_ref)) return;
+		this->frozenRefs.erase(a_ref);
+	}
+
+	bool Manager::IsRefFrozen(RE::TESObjectREFR* a_ref) {
+		return this->frozenRefs.contains(a_ref);
+	}
+
+	std::vector<RE::TESObjectREFR*> Manager::GetNearbyAssociatedReferences(RE::TESObjectREFR* a_center, const FireData* a_data) {
 		std::vector<RE::TESObjectREFR*> response;
 		RE::TESObjectREFR* foundLight = nullptr;
 		RE::TESObjectREFR* foundSmoke = nullptr;
@@ -16,13 +30,12 @@ namespace {
 		auto* fireManipulatorSingleton = FireManipulator::Manager::GetSingleton();
 
 		if (const auto TES = RE::TES::GetSingleton(); TES) {
-			TES->ForEachReferenceInRange(a_center, 300.0f, [&](RE::TESObjectREFR* a_ref) {
+			TES->ForEachReferenceInRange(a_center, radius, [&](RE::TESObjectREFR* a_ref) {
 				if (fireManipulatorSingleton->IsRefFrozen(a_ref)) return continueContainer;
 				if (!a_ref->Is3DLoaded()) return continueContainer;
 				if (a_ref->IsDisabled()) return continueContainer;
 
 				auto* baseForm = a_ref->GetBaseObject();
-				_loggerInfo("Fetching base form");
 				if (!baseForm) return continueContainer;
 
 				float distance = a_ref->data.location.GetDistance(refLocation);
@@ -36,7 +49,7 @@ namespace {
 						foundDynDOLODFire = a_ref;
 					}
 				}
-				else if ((baseForm->Is(RE::FormType::Light) || a_ref->Is(RE::FormType::Light)) 
+				else if ((baseForm->Is(RE::FormType::Light) || a_ref->Is(RE::FormType::Light))
 					&& a_data->disableLight && distance < lastLightDistance) {
 					foundLight = a_ref;
 				}
@@ -54,22 +67,6 @@ namespace {
 		}
 
 		return response;
-	}
-}
-
-namespace FireManipulator {
-	void Manager::FreezeReference(RE::TESObjectREFR* a_ref) {
-		if (this->frozenRefs.contains(a_ref)) return;
-		this->frozenRefs[a_ref] = true;
-	}
-
-	void Manager::UnFreezeReference(RE::TESObjectREFR* a_ref) {
-		if (!this->frozenRefs.contains(a_ref)) return;
-		this->frozenRefs.erase(a_ref);
-	}
-
-	bool Manager::IsRefFrozen(RE::TESObjectREFR* a_ref) {
-		return this->frozenRefs.contains(a_ref);
 	}
 
 	void Manager::ExtinguishFire(RE::TESObjectREFR* a_fire, const FireData* a_data) {
@@ -141,7 +138,7 @@ namespace FireManipulator {
 			dayAttached->SetFloat(RE::Calendar::GetSingleton()->GetDaysPassed());
 			auto callback = RE::BSTSmartPointer<RE::BSScript::IStackCallbackFunctor>();
 			auto args = RE::MakeFunctionArguments();
-			const RE::BSFixedString functionName = "Extinguish"sv;
+			const RE::BSFixedString functionName = "RainingFire"sv;
 			auto scriptObject = foundScript.get();
 			auto object = RE::BSTSmartPointer<RE::BSScript::Object>(scriptObject);
 			vm->DispatchMethodCall(object, functionName, args, callback);

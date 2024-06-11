@@ -1,6 +1,7 @@
 #include "papyrus.h"
 #include "eventListener.h"
 #include "fireManipulator.h"
+#include "fireRegister.h"
 
 namespace Papyrus {
 	std::vector<int> GetVersion(STATIC_ARGS) {
@@ -24,6 +25,12 @@ namespace Papyrus {
 		FireManipulator::Manager::GetSingleton()->ExtinguishAllFires();
 	}
 
+	std::vector<RE::TESObjectREFR*> GetNearbyAssociatedReferences(STATIC_ARGS, RE::TESObjectREFR* a_center) {
+		auto* baseForm = a_center->GetBaseObject();
+		const FireData* data = CachedData::Fires::GetSingleton()->GetFireData(baseForm);
+		return FireManipulator::Manager::GetSingleton()->GetNearbyAssociatedReferences(a_center, data);
+	}
+
 	void SetRainingFlag(STATIC_ARGS, bool a_isRaining) {
 		Events::Weather::WeatherEventManager::GetSingleton()->SetRainingFlag(a_isRaining);
 	}
@@ -42,6 +49,7 @@ namespace Papyrus {
 		BIND(FreezeFire);
 		BIND(UnFreezeFire);
 		BIND(SetRainingFlag);
+		BIND(GetNearbyAssociatedReferences);
 		BIND_EVENT(RegisterForAccurateWeatherChange, true);
 		BIND_EVENT(UnRegisterForAccurateWeatherChange, true);
 	}
