@@ -50,6 +50,7 @@ struct FireData {
 	bool         dyndolodFire{ false };
 	bool         disableLight{ false };
 	bool         disableSmoke{ false };
+	double       sizeFactor{ 1.0 };
 	double       lightLookupRadius{ -1.0 };
 	double       smokeLookupRadius{ -1.0 };
 	double       referenceLookupRadius{ -1.0 };

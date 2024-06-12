@@ -5,6 +5,16 @@ namespace {
     bool IsFormInVector(const std::vector<T>* a_vec, T a_form) {
         return std::find(a_vec->begin(), a_vec->end(), a_form) != a_vec->end();
     }
+
+    double GetBaseSize(RE::TESBoundObject* a_bound) {
+        auto& boundData = a_bound->boundData;
+
+        double baseX = boundData.boundMax.x - boundData.boundMin.x;
+        double baseY = boundData.boundMax.y - boundData.boundMin.y;
+        double baseZ = boundData.boundMax.z - boundData.boundMin.z;
+        double result = std::hypot(baseX, baseY, baseZ);
+        return result;
+    }
 }
 
 namespace CachedData {
@@ -80,6 +90,8 @@ namespace CachedData {
         fireData.disableSmoke = this->checkSmoke;
         fireData.smokeLookupRadius = this->lookupSmokeRadius;
 
+        fireData.sizeFactor = std::floor(GetBaseSize(a_litForm) / GetBaseSize(fireData.offVersion) * 100.0) / 100.0;
+
         this->fireDataMap[a_litForm] = fireData;
         this->validFires.push_back(a_litForm);
         this->validOffFires.push_back(fireData.offVersion);
@@ -104,21 +116,21 @@ namespace CachedData {
             this->checkLight, this->checkSmoke, this->lookupLightRadius, this->lookupSmokeRadius);
         _loggerInfo("----------------------------------------------------------------");
 
-        /*
+        std::vector<double> sizes{};
         for (auto& vecObj : orderedPairVector) {
             auto& pair = this->fireDataMap[vecObj.first];
             _loggerInfo("    >{}", vecObj.second);
-            _loggerInfo("        ->Light lookup: {}", pair.lightLookupRadius);
-            _loggerInfo("        ->Smoke lookup: {}", pair.smokeLookupRadius);
 
             auto edid = _debugEDID(pair.offVersion);
             if (edid.empty()) edid = std::to_string(pair.offVersion->formID);
             _loggerInfo("        ->Off Version: {}", edid);
 
+            //Currently unused.
+            //_loggerInfo("        ->Size Factor: {}", pair.sizeFactor);
+
             if (!pair.dyndolodFire) continue;
             edid = _debugEDID(pair.dyndolodVersion);
             _loggerInfo("        ->DynDOLOD Version: {}", edid);
         }
-        */
     }
 }
