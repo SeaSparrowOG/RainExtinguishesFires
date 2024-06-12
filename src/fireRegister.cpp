@@ -103,6 +103,8 @@ namespace CachedData {
         _loggerInfo("    Check Lights: {}\n    Check Smoke: {}\n    Light Radius: {}\n    Smoke Radius: {}", 
             this->checkLight, this->checkSmoke, this->lookupLightRadius, this->lookupSmokeRadius);
         _loggerInfo("----------------------------------------------------------------");
+
+        /*
         for (auto& vecObj : orderedPairVector) {
             auto& pair = this->fireDataMap[vecObj.first];
             _loggerInfo("    >{}", vecObj.second);
@@ -117,5 +119,6 @@ namespace CachedData {
             edid = _debugEDID(pair.dyndolodVersion);
             _loggerInfo("        ->DynDOLOD Version: {}", edid);
         }
+        */
     }
 }

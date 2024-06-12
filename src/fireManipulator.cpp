@@ -17,7 +17,7 @@ namespace FireManipulator {
 	}
 
 	std::vector<RE::TESObjectREFR*> Manager::GetNearbyAssociatedReferences(RE::TESObjectREFR* a_center, const FireData* a_data) {
-		std::vector<RE::TESObjectREFR*> response;
+		std::vector<RE::TESObjectREFR*> response{};
 		RE::TESObjectREFR* foundLight = nullptr;
 		RE::TESObjectREFR* foundSmoke = nullptr;
 		RE::TESObjectREFR* foundDynDOLODFire = nullptr;
@@ -41,17 +41,20 @@ namespace FireManipulator {
 				float distance = a_ref->data.location.GetDistance(refLocation);
 				if (cachedDataSingleton->IsSmokeObject(baseForm) && a_data->disableSmoke && distance < lastSmokeDistance) {
 					foundSmoke = a_ref;
+					lastSmokeDistance = distance;
 				}
 				else if (cachedDataSingleton->IsDynDOLODFire(baseForm) && distance < lastDynDOLODDistance) {
 					std::string edid = clib_util::editorID::get_editorID(baseForm);
 					std::string originalEdid = clib_util::editorID::get_editorID(a_center->GetBaseObject()->As<RE::TESForm>());
 					if (edid.contains(originalEdid)) {
 						foundDynDOLODFire = a_ref;
+						lastDynDOLODDistance = distance;
 					}
 				}
 				else if ((baseForm->Is(RE::FormType::Light) || a_ref->Is(RE::FormType::Light))
 					&& a_data->disableLight && distance < lastLightDistance) {
 					foundLight = a_ref;
+					lastLightDistance = distance;
 				}
 				return continueContainer;
 				});
@@ -73,7 +76,6 @@ namespace FireManipulator {
 		//Step 1: Validate and gather additional references to extinguish
 		if (this->frozenRefs.contains(a_fire)) return;
 		auto* offForm = a_data->offVersion;
-		std::vector<RE::TESObjectREFR*> additionalExtinguishes{};
 		std::vector<RE::TESObjectREFR*> tempFrozenRefs{};
 
 		auto* referenceExtraList = &a_fire->extraList;
@@ -94,14 +96,6 @@ namespace FireManipulator {
 
 		this->frozenRefs[a_fire] = true;
 		tempFrozenRefs.push_back(a_fire);
-
-		if (a_mode == "Extinguish"sv) {
-			additionalExtinguishes = GetNearbyAssociatedReferences(a_fire, a_data);
-			for (auto* obj : additionalExtinguishes) {
-				this->frozenRefs[obj] = true;
-				tempFrozenRefs.push_back(obj);
-			}
-		}
 
 		//Step 2: Place activator and initialize script data.
 		auto offFire = a_fire->PlaceObjectAtMe(offForm, false);
@@ -137,7 +131,6 @@ namespace FireManipulator {
 			}
 
 			RE::BSScript::PackValue(relatedFlame, a_fire);
-			RE::BSScript::PackValue(addExtProperty, additionalExtinguishes);
 			dayAttached->SetFloat(RE::Calendar::GetSingleton()->GetDaysPassed());
 			auto callback = RE::BSTSmartPointer<RE::BSScript::IStackCallbackFunctor>();
 			auto args = RE::MakeFunctionArguments();
