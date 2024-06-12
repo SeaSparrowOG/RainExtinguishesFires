@@ -1,11 +1,9 @@
 #include <spdlog/sinks/basic_file_sink.h>
 
-#include "eventDispenser.h"
 #include "fireRegister.h"
-#include "hitManager.h"
-#include "hooks.h"
-#include "loadEventManager.h"
+#include "eventListener.h"
 #include "papyrus.h"
+#include "settingsReader.h"
 
 void SetupLog() {
     auto logsFolder = SKSE::log::log_directory();
@@ -24,68 +22,29 @@ void SetupLog() {
     spdlog::set_pattern("%v");
 }
 
-void MessageHandler(SKSE::MessagingInterface::Message* a_message)
-{
-    bool unregisterAll = false;
-    bool registeredChange = false;
-    bool registeredHit = false;
+void MessageHandler(SKSE::MessagingInterface::Message* a_message) {
+    bool success = true;
     switch (a_message->type) {
     case SKSE::MessagingInterface::kDataLoaded:
-        if (!RE::TESDataHandler::GetSingleton()->LookupLoadedLightModByName("RainExtinguishesFires.esp"sv)) {
-            SKSE::log::critical("FATAL: RainExtinguishesFires.esp is not active in the load order. Aborting load.");
-            SKSE::stl::report_and_fail("FATAL: RainExtinguishesFires.esp is not active in the load order. Aborting load.");
-            break;
-        }
-        Hooks::Install();
-        _loggerInfo("Hooked functions.");
+        SKSE::GetPapyrusInterface()->Register(Papyrus::RegisterFunctions);
+        if (!Events::RegisterForEvents()) success = false;
+        if (success && !Settings::InitializeINISettings()) success = false;
+        if (success && !Settings::InitializeFireSettings()) success = false;
 
-        if (!unregisterAll && LoadManager::ActorCellManager::GetSingleton()->RegisterListener()) {
-            _loggerInfo("Registered the Player manager.");
-            registeredChange = true;
+        if (!success) {
+            _loggerInfo("One or more failures occured during loaded.");
         }
         else {
-            unregisterAll = true;
+            _loggerInfo("Finished startup tasks successfully.");
+            CachedData::Fires::GetSingleton()->Report();
         }
+        _loggerInfo("----------------------------------------------------------------");
 
-        if (!unregisterAll && HitManager::HitManager::GetSingleton()->RegisterListener()) {
-            _loggerInfo("Registered the Hit manager.");
-            registeredHit = true;
-        }
-        else {
-            unregisterAll = true;
-        }
-
-        if (!unregisterAll && SKSE::GetPapyrusInterface()->Register(Papyrus::RegisterFunctions)) {
-            _loggerInfo("Registered the new Papyrus functions.");
-        }
-        else {
-            unregisterAll = true;
-        }
-
-        if (!unregisterAll && CachedData::FireRegistry::GetSingleton()->BuildRegistry()) {
-            _loggerInfo("Built the cache system.");
-        }
-        else {
-            unregisterAll = true;
-        }
-
-        Events::Papyrus::GetSingleton()->SetIsRaining(false);
-
-        if (unregisterAll) {
-            _loggerInfo("Error(s) occured while preparing the plugin. Loading stopped.");
-            HitManager::HitManager::GetSingleton()->UnRegisterListener();
-            Events::Papyrus::GetSingleton()->DisablePapyrus();
-        }
-        else {
-            _loggerInfo("{} has finished loading, enjoy your game!", Version::PROJECT);
-        }
         break;
     case SKSE::MessagingInterface::kNewGame:
     case SKSE::MessagingInterface::kPostLoadGame:
-        if (Events::Papyrus::GetSingleton()->IsRaining()) {
-            Events::Papyrus::GetSingleton()->SetIsRaining(true);
-            Events::Papyrus::GetSingleton()->ExtinguishAllFires();
-        }
+        if (!success) break;
+        Events::Weather::WeatherEventManager::GetSingleton()->UpdateWeatherFlag();
         break;
     default:
         break;
@@ -97,7 +56,7 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
     SKSE::PluginVersionData v;
     v.PluginVersion({ Version::MAJOR, Version::MINOR, Version::PATCH });
     v.PluginName(Version::PROJECT);
-    v.AuthorName("SeaSparrow");
+    v.AuthorName(Version::AUTHOR);
     v.UsesAddressLibrary();
     v.UsesUpdatedStructs();
     v.CompatibleVersions({
@@ -130,16 +89,16 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface * 
 
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a_skse) {
     SetupLog();
-    _loggerInfo("Starting up Rain Extinguishes Fires.");
-    _loggerInfo("Plugin Version: {}.{}.{}", 5, 0, 0);
+    _loggerInfo("Starting up {}.", Version::PROJECT);
+    _loggerInfo("Plugin Version: {}.{}.{}", Version::MAJOR, Version::MINOR, Version::PATCH);
     _loggerInfo("Version build:");
 
 #ifdef SKYRIM_AE
-    _loggerInfo("    >Latest Version.");
+    _loggerInfo("    >Latest Version. Maintained by: {}.", Version::AUTHOR);
 #else
     _loggerInfo("    >1.5 Version. Do not report ANY issues with this version.");
 #endif
-    _loggerInfo("Rain Extinguishes Fires is performing startup tasks.");
+    _loggerInfo("----------------------------------------------------------------");
 
     SKSE::Init(a_skse);
     auto messaging = SKSE::GetMessagingInterface();

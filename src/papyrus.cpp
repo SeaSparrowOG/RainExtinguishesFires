@@ -1,9 +1,11 @@
 #include "papyrus.h"
-#include "eventDispenser.h"
+#include "eventListener.h"
+#include "fireManipulator.h"
+#include "fireRegister.h"
 
 namespace Papyrus {
 	std::vector<int> GetVersion(STATIC_ARGS) {
-		std::vector<int> response;
+		std::vector<int> response{};
 		response.push_back(Version::MAJOR);
 		response.push_back(Version::MINOR);
 		response.push_back(Version::PATCH);
@@ -13,46 +15,35 @@ namespace Papyrus {
 
 	void RegisterForAccurateWeatherChange(STATIC_ARGS, const RE::TESForm* a_form) {
 		if (!a_form) return;
-		Events::Papyrus::GetSingleton()->AddWeatherChangeListener(a_form, true);
+		Events::Weather::WeatherEventManager::GetSingleton()->AddWeatherChangeListener(a_form, true);
 	}
 
 	void UnRegisterForAccurateWeatherChange(STATIC_ARGS, const RE::TESForm* a_form) {
 		if (!a_form) return;
-		Events::Papyrus::GetSingleton()->AddWeatherChangeListener(a_form, false);
-	}
-
-	void RegisterForPlayerCellChangeEvent(STATIC_ARGS, const RE::TESForm* a_form) {
-		if (!a_form) return;
-		Events::Papyrus::GetSingleton()->AddInteriorExteriorListener(a_form, true);
-	}
-
-	void UnRegisterForPlayerCellChangeEvent(STATIC_ARGS, const RE::TESForm* a_form) {
-		if (!a_form) return;
-		Events::Papyrus::GetSingleton()->AddInteriorExteriorListener(a_form, false);
+		Events::Weather::WeatherEventManager::GetSingleton()->AddWeatherChangeListener(a_form, false);
 	}
 
 	void ExtinguishAllLoadedFires(STATIC_ARGS) {
-		Events::Papyrus::GetSingleton()->ExtinguishAllFires();
+		FireManipulator::Manager::GetSingleton()->ExtinguishAllFires();
+	}
+
+	std::vector<RE::TESObjectREFR*> GetNearbyAssociatedReferences(STATIC_ARGS, RE::TESObjectREFR* a_center) {
+		auto* baseForm = a_center->GetBaseObject();
+		const FireData* data = CachedData::Fires::GetSingleton()->GetFireData(baseForm);
+		auto response = FireManipulator::Manager::GetSingleton()->GetNearbyAssociatedReferences(a_center, data);
+		return response;
 	}
 
 	void SetRainingFlag(STATIC_ARGS, bool a_isRaining) {
-		Events::Papyrus::GetSingleton()->SetIsRaining(a_isRaining);
+		Events::Weather::WeatherEventManager::GetSingleton()->SetRainingFlag(a_isRaining);
 	}
 
-	bool FreezeFire(STATIC_ARGS, RE::TESObjectREFR* a_fire) {
-		return Events::Papyrus::GetSingleton()->ManipulateFireRegistry(a_fire, true);
+	void FreezeFire(STATIC_ARGS, RE::TESObjectREFR* a_ref) {
+		FireManipulator::Manager::GetSingleton()->FreezeReference(a_ref);
 	}
 
-	bool UnFreezeFire(STATIC_ARGS, RE::TESObjectREFR* a_fire) {
-		return Events::Papyrus::GetSingleton()->ManipulateFireRegistry(a_fire, false);
-	}
-
-	bool FreezeObject(STATIC_ARGS, RE::TESObjectREFR* a_ref) {
-		return Events::Papyrus::GetSingleton()->ManipulateSecondaryRegistry(a_ref, true);
-	}
-
-	bool UnFreezeObject(STATIC_ARGS, RE::TESObjectREFR* a_ref) {
-		return Events::Papyrus::GetSingleton()->ManipulateSecondaryRegistry(a_ref, false);
+	void UnFreezeFire(STATIC_ARGS, RE::TESObjectREFR* a_ref) {
+		FireManipulator::Manager::GetSingleton()->UnFreezeReference(a_ref);
 	}
 
 	void Bind(VM& a_vm) {
@@ -60,13 +51,10 @@ namespace Papyrus {
 		BIND(ExtinguishAllLoadedFires);
 		BIND(FreezeFire);
 		BIND(UnFreezeFire);
-		BIND(FreezeObject);
-		BIND(UnFreezeObject);
 		BIND(SetRainingFlag);
+		BIND(GetNearbyAssociatedReferences);
 		BIND_EVENT(RegisterForAccurateWeatherChange, true);
-		BIND_EVENT(RegisterForPlayerCellChangeEvent, true);
 		BIND_EVENT(UnRegisterForAccurateWeatherChange, true);
-		BIND_EVENT(UnRegisterForPlayerCellChangeEvent, true);
 	}
 
 	bool RegisterFunctions(VM* a_vm) {
