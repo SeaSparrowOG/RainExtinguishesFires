@@ -15,10 +15,12 @@ namespace Papyrus {
 
 	void RegisterForAccurateWeatherChange(STATIC_ARGS, const RE::TESForm* a_form) {
 		if (!a_form) return;
+		Events::Weather::WeatherEventManager::GetSingleton()->AddWeatherChangeListener(a_form, true);
 	}
 
 	void UnRegisterForAccurateWeatherChange(STATIC_ARGS, const RE::TESForm* a_form) {
 		if (!a_form) return;
+		Events::Weather::WeatherEventManager::GetSingleton()->AddWeatherChangeListener(a_form, false);
 	}
 
 	void ExtinguishAllLoadedFires(STATIC_ARGS) {

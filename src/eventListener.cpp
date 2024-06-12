@@ -98,20 +98,12 @@ namespace Events {
 
 		void WeatherEventManager::thunk(RE::TESRegion* a_region, RE::TESWeather* a_currentWeather) {
 			func(a_region, a_currentWeather);
-			auto* lastWeather = RE::Sky::GetSingleton()->lastWeather;
-			if (a_currentWeather && currentWeather != a_currentWeather) {
-				currentWeather = a_currentWeather;
-			} 
-			bool currentlyRaining = currentWeather ? currentWeather->data.flags & rainyFlag
-				|| currentWeather->data.flags & snowyFlag : false;
-			WeatherEventManager::GetSingleton()->SetRainingFlag(currentlyRaining);
-
-			if (lastWeather && currentWeather != lastWeather) {
-				if (WeatherEventManager::GetSingleton()->IsRaining() && !currentlyRaining
-					|| !WeatherEventManager::GetSingleton()->IsRaining() && currentlyRaining) {
-					FireManipulator::Manager::GetSingleton()->ExtinguishAllFires();
-				}
-			}
+			if (!a_currentWeather) return;
+			if (a_currentWeather == currentWeather) return;
+			bool currentlyRaining = a_currentWeather ? a_currentWeather->data.flags & rainyFlag
+				|| a_currentWeather->data.flags & snowyFlag : false;
+			WeatherEventManager::GetSingleton()->SendWeatherChangeEvent(currentlyRaining);
+			currentWeather = a_currentWeather;
 		}
 
 		bool WeatherEventManager::IsRaining() {
@@ -127,6 +119,19 @@ namespace Events {
 			bool isRainy = skyrimWeather ? skyrimWeather->data.flags & RE::TESWeather::WeatherDataFlag::kRainy
 				|| skyrimWeather->data.flags & RE::TESWeather::WeatherDataFlag::kSnow : false;
 			this->isRaining = isRainy;
+		}
+
+		void WeatherEventManager::AddWeatherChangeListener(const RE::TESForm* a_form, bool a_listen) {
+			if (a_listen) {
+				this->weatherTransition.Register(a_form);
+			}
+			else {
+				this->weatherTransition.Unregister(a_form);
+			}
+		}
+
+		void WeatherEventManager::SendWeatherChangeEvent(bool newWeatherIsRainy) {
+			this->weatherTransition.QueueEvent(newWeatherIsRainy);
 		}
 	}
 

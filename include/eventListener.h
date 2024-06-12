@@ -61,6 +61,8 @@ namespace Events {
 			bool IsRaining();
 			void SetRainingFlag(bool a_raining);
 			void UpdateWeatherFlag();
+			void AddWeatherChangeListener(const RE::TESForm* a_form, bool a_listen);
+			void SendWeatherChangeEvent(bool newWeatherIsRainy);
 
 			//Hook stuff
 			static inline RE::TESWeather* currentWeather{ nullptr };
@@ -69,7 +71,8 @@ namespace Events {
 
 		private:
 			//Members
-			bool isRaining{ false };
+			bool                        isRaining{ false };
+			SKSE::RegistrationSet<bool> weatherTransition{ "OnWeatherChange"sv };
 		};
 	}
 
