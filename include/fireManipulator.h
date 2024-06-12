@@ -10,7 +10,7 @@ namespace FireManipulator {
 		bool IsRefFrozen(RE::TESObjectREFR* a_ref);
 
 		void ExtinguishAllFires();
-		void ExtinguishFire(RE::TESObjectREFR* a_fire, const FireData* a_data);
+		void ExtinguishFire(RE::TESObjectREFR* a_fire, const FireData* a_data, std::string_view a_mode);
 		void RelightFire(RE::TESObjectREFR* a_fire);
 		std::vector<RE::TESObjectREFR*> GetNearbyAssociatedReferences(RE::TESObjectREFR* a_center, const FireData* a_data);
 

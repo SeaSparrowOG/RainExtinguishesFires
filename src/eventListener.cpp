@@ -15,6 +15,48 @@ namespace Events {
 			auto* eventSpell = eventSource ? eventSource->As<RE::SpellItem>() : nullptr;
 			if (!(eventWeapon || eventSpell)) return continueEvent;
 
+			bool needsFire = CachedData::Fires::GetSingleton()->IsUnLitFire(eventBaseForm);
+			bool extinguishFire = false;
+			bool relightFire = false;
+			RE::BSTArray<RE::Effect*> effectArray;
+
+			if (eventWeapon) {
+				auto* weaponEnchantment = eventWeapon->formEnchanting;
+				if (!weaponEnchantment) return continueEvent;
+
+				effectArray = weaponEnchantment->effects;
+			}
+			else {
+				effectArray = eventSpell->effects;
+			}
+
+			bool hasFire = false;
+			bool hasFrost = false;
+			for (auto* effect : effectArray) {
+				auto* baseEffect = effect->baseEffect;
+				if (!baseEffect) return continueEvent;
+
+				if (baseEffect->HasKeywordString("MagicDamageFire"sv)) {
+					hasFire = true;
+				}
+
+				if (baseEffect->HasKeywordString("MagicDamageFrost"sv)) {
+					hasFrost = true;
+				}
+			}
+			if (hasFire && hasFrost) return continueEvent;
+
+			if (hasFire && needsFire) relightFire = true;
+			if (hasFrost && !needsFire) extinguishFire = true;
+			if (!relightFire && !extinguishFire) return continueEvent;
+
+			if (relightFire) {
+				FireManipulator::Manager::GetSingleton()->RelightFire(eventTarget);
+			}
+			else {
+				const auto* data = CachedData::Fires::GetSingleton()->GetFireData(eventBaseForm);
+				FireManipulator::Manager::GetSingleton()->ExtinguishFire(eventTarget, data, "Extinguish"sv);
+			}
 			return continueEvent;
 		}
 	}
@@ -38,7 +80,7 @@ namespace Events {
 				auto* fireData = CachedData::Fires::GetSingleton()->GetFireData(eventBaseObject);
 				if (!fireData) return continueEvent;
 
-				FireManipulator::Manager::GetSingleton()->ExtinguishFire(eventReference, fireData);
+				FireManipulator::Manager::GetSingleton()->ExtinguishFire(eventReference, fireData, "FireInTheRain");
 			}
 			else if (!isRaining && CachedData::Fires::GetSingleton()->IsUnLitFire(eventBaseObject)) {
 				FireManipulator::Manager::GetSingleton()->RelightFire(eventReference);

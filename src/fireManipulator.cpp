@@ -69,7 +69,7 @@ namespace FireManipulator {
 		return response;
 	}
 
-	void Manager::ExtinguishFire(RE::TESObjectREFR* a_fire, const FireData* a_data) {
+	void Manager::ExtinguishFire(RE::TESObjectREFR* a_fire, const FireData* a_data, std::string_view a_mode) {
 		//Step 1: Validate and gather additional references to extinguish
 		if (this->frozenRefs.contains(a_fire)) return;
 		auto* offForm = a_data->offVersion;
@@ -94,10 +94,13 @@ namespace FireManipulator {
 
 		this->frozenRefs[a_fire] = true;
 		tempFrozenRefs.push_back(a_fire);
-		additionalExtinguishes = GetNearbyAssociatedReferences(a_fire, a_data);
-		for (auto* obj : additionalExtinguishes) { 
-			this->frozenRefs[obj] = true;
-			tempFrozenRefs.push_back(obj);
+
+		if (a_mode == "Extinguish"sv) {
+			additionalExtinguishes = GetNearbyAssociatedReferences(a_fire, a_data);
+			for (auto* obj : additionalExtinguishes) {
+				this->frozenRefs[obj] = true;
+				tempFrozenRefs.push_back(obj);
+			}
 		}
 
 		//Step 2: Place activator and initialize script data.
@@ -138,7 +141,7 @@ namespace FireManipulator {
 			dayAttached->SetFloat(RE::Calendar::GetSingleton()->GetDaysPassed());
 			auto callback = RE::BSTSmartPointer<RE::BSScript::IStackCallbackFunctor>();
 			auto args = RE::MakeFunctionArguments();
-			const RE::BSFixedString functionName = "RainingFire"sv;
+			const RE::BSFixedString functionName = a_mode;
 			auto scriptObject = foundScript.get();
 			auto object = RE::BSTSmartPointer<RE::BSScript::Object>(scriptObject);
 			vm->DispatchMethodCall(object, functionName, args, callback);
@@ -199,6 +202,7 @@ namespace FireManipulator {
 			auto* cachedDataSingleton = CachedData::Fires::GetSingleton();
 			TES->ForEachReferenceInRange(RE::PlayerCharacter::GetSingleton()->AsReference(), 0.0, [&](RE::TESObjectREFR* a_ref) {
 				if (!a_ref->Is3DLoaded()) return continueContainer;
+				if (a_ref->IsDisabled()) return continueContainer;
 
 				auto* baseForm = a_ref ? a_ref->GetBaseObject() : nullptr;
 				if (!(baseForm && CachedData::Fires::GetSingleton()->IsLitFire(baseForm))) {
@@ -207,7 +211,7 @@ namespace FireManipulator {
 
 				auto* fireData = cachedDataSingleton->GetFireData(baseForm);
 				if (fireData) {
-					ExtinguishFire(a_ref, fireData);
+					ExtinguishFire(a_ref, fireData, "FireInTheRain"sv);
 				}
 				return RE::BSContainer::ForEachResult::kContinue;
 				});
