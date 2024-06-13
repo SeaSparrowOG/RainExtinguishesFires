@@ -90,7 +90,8 @@ namespace CachedData {
         fireData.disableSmoke = this->checkSmoke;
         fireData.smokeLookupRadius = this->lookupSmokeRadius;
 
-        fireData.sizeFactor = std::floor(GetBaseSize(a_litForm) / GetBaseSize(fireData.offVersion) * 100.0) / 100.0;
+        //Interesting ideas, bounding is wrong.
+        //fireData.sizeFactor = std::floor(GetBaseSize(a_litForm) / GetBaseSize(fireData.offVersion) * 100.0) / 100.0;
 
         this->fireDataMap[a_litForm] = fireData;
         this->validFires.push_back(a_litForm);
