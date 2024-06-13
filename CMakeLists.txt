@@ -6,7 +6,8 @@ set(VERSION 5.0.0 CACHE STRING "")
 # ---- Options ----
 option(SUPPORT_VR "Build for VR." OFF)
 option(BUILD_SKYRIMVR "Build for Skyrim VR" OFF)
-option(BUILD_SKYRIMAE "Build for Skyrim AE" OFF)
+option(BUILD_SKYRIMAE "Build for Skyrim AE only." OFF)
+option(BUILD_NG "Build for Skyrim SE and AE." OFF)
 
 # ---- Cache build vars ----
 macro(set_from_environment VARIABLE)
@@ -30,7 +31,14 @@ macro(find_commonlib_path)
 endmacro()
 
 set_from_environment(VCPKG_ROOT) 
-set(CommonLibName "CommonLibSSE")
+
+if(BUILD_NG)
+	set(CommonLibName "CommonLibNG")
+	set(BUILD_TESTS OFF)
+else()
+	set(CommonLibName "CommonLibSSE")
+endif()
+
 find_commonlib_path()
 set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
 set(VCPKG_TARGET_TRIPLET "x64-windows-static" CACHE STRING "")
@@ -40,6 +48,8 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STR
 if (BUILD_SKYRIMAE)
 	add_compile_definitions(SKYRIM_AE)
 	add_compile_definitions(SKYRIM_SUPPORT_AE)
+else()
+	add_compile_definitions(SKYRIM_NG)
 endif()
 
 # ---- Project ----
@@ -83,6 +93,13 @@ endif ()
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
 set(Boost_USE_STATIC_LIBS ON)
+
+#NG Specific Fuckery
+if (BUILD_NG)
+	set(CMAKE_CXX_STANDARD 23)
+	set(CMAKE_CXX_STANDARD_REQUIRED ON)
+	include(GNUInstallDirs)
+endif()
 
 # ---- Dependencies ----
 
@@ -150,7 +167,7 @@ target_include_directories(
 target_link_libraries(
 	${PROJECT_NAME}
 	PRIVATE
-		${CommonLibName}::${CommonLibName}
+		CommonLibSSE::CommonLibSSE
 		JsonCpp::JsonCpp
 )
 

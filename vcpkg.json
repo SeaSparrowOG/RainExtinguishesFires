@@ -5,6 +5,8 @@
   "homepage": "",
   "license": "MIT",
   "dependencies": [
+    "rapidcsv",
+    "directxtk",
     "rsm-binary-io",
     "spdlog",
     "clib-util",

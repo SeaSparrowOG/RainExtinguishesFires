@@ -28,7 +28,7 @@ namespace FireManipulator {
 		auto refLocation = a_center->GetPosition();
 		auto* cachedDataSingleton = CachedData::Fires::GetSingleton();
 		auto* fireManipulatorSingleton = FireManipulator::Manager::GetSingleton();
-
+		
 		if (const auto TES = RE::TES::GetSingleton(); TES) {
 			TES->ForEachReferenceInRange(a_center, radius, [&](RE::TESObjectREFR* a_ref) {
 				if (fireManipulatorSingleton->IsRefFrozen(a_ref)) return continueContainer;
@@ -38,7 +38,7 @@ namespace FireManipulator {
 				auto* baseForm = a_ref->GetBaseObject();
 				if (!baseForm) return continueContainer;
 
-				float distance = a_ref->data.location.GetDistance(refLocation);
+				float distance = a_ref->GetPosition().GetDistance(refLocation);
 				if (cachedDataSingleton->IsSmokeObject(baseForm) && a_data->disableSmoke && distance < lastSmokeDistance) {
 					foundSmoke = a_ref;
 					lastSmokeDistance = distance;
@@ -68,7 +68,6 @@ namespace FireManipulator {
 		if (foundDynDOLODFire) {
 			response.push_back(foundDynDOLODFire);
 		}
-
 		return response;
 	}
 
@@ -105,15 +104,20 @@ namespace FireManipulator {
 
 		offReference->MoveTo(a_fire);
 		offReference->data.angle = a_fire->data.angle;
+
+#ifndef SKYRIM_NG
 		offReference->refScale = a_fire->refScale;
+#else 
+		offReference->GetReferenceRuntimeData().refScale = a_fire->GetReferenceRuntimeData().refScale;
+#endif
 		auto* vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
+		
 		auto* handlePolicy = vm->GetObjectHandlePolicy();
 		RE::VMHandle handle = handlePolicy->GetHandleForObject(offReference->GetFormType(), offReference);
 		if (!handle || !vm->attachedScripts.contains(handle)) {
 			for (auto* obj : tempFrozenRefs) {
 				this->frozenRefs.erase(obj);
 			}
-
 			offReference->Disable();
 			offReference->DeleteThis();
 			return;
@@ -141,7 +145,7 @@ namespace FireManipulator {
 			success = true;
 			break;
 		}
-
+		
 		if (!success) {
 			if (a_fire->IsDisabled()) {
 				a_fire->Enable(false);
@@ -193,20 +197,20 @@ namespace FireManipulator {
 	void Manager::ExtinguishAllFires() {
 		if (const auto TES = RE::TES::GetSingleton(); TES) {
 			auto* cachedDataSingleton = CachedData::Fires::GetSingleton();
-			TES->ForEachReferenceInRange(RE::PlayerCharacter::GetSingleton()->AsReference(), 0.0, [&](RE::TESObjectREFR* a_ref) {
+			auto* playerRef = RE::PlayerCharacter::GetSingleton()->AsReference();
+			TES->ForEachReferenceInRange(playerRef, 0.0, [&](RE::TESObjectREFR* a_ref) {
 				if (!a_ref->Is3DLoaded()) return continueContainer;
 				if (a_ref->IsDisabled()) return continueContainer;
 
 				auto* baseForm = a_ref ? a_ref->GetBaseObject() : nullptr;
-				if (!(baseForm && CachedData::Fires::GetSingleton()->IsLitFire(baseForm))) {
-					return continueContainer;
-				}
+				if (!baseForm) return continueContainer;
+				if (!cachedDataSingleton->IsLitFire(baseForm)) return continueContainer;
 
 				auto* fireData = cachedDataSingleton->GetFireData(baseForm);
 				if (fireData) {
 					ExtinguishFire(a_ref, fireData, "FireInTheRain"sv);
 				}
-				return RE::BSContainer::ForEachResult::kContinue;
+				return continueContainer;
 				});
 		}
 	}
