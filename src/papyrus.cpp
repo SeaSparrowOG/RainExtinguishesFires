@@ -28,6 +28,10 @@ namespace Papyrus {
 	}
 
 	std::vector<RE::TESObjectREFR*> GetNearbyAssociatedReferences(STATIC_ARGS, RE::TESObjectREFR* a_center) {
+#ifdef SKYRIM_NG
+		//This is broken in NG.
+		return std::vector<RE::TESObjectREFR*>{};
+#endif
 		auto* baseForm = a_center->GetBaseObject();
 		const FireData* data = CachedData::Fires::GetSingleton()->GetFireData(baseForm);
 		auto response = FireManipulator::Manager::GetSingleton()->GetNearbyAssociatedReferences(a_center, data);

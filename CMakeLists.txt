@@ -34,6 +34,7 @@ set_from_environment(VCPKG_ROOT)
 
 if(BUILD_NG)
 	set(CommonLibName "CommonLibNG")
+	set(BUILD_TESTS OFF)
 else()
 	set(CommonLibName "CommonLibSSE")
 endif()
@@ -166,7 +167,7 @@ target_include_directories(
 target_link_libraries(
 	${PROJECT_NAME}
 	PRIVATE
-		${CommonLibName}::${CommonLibName}
+		CommonLibSSE::CommonLibSSE
 		JsonCpp::JsonCpp
 )
 

@@ -91,7 +91,12 @@ namespace Events {
 
 	namespace Weather {
 		bool WeatherEventManager::InstallHook() {
-			REL::Relocation<std::uintptr_t> target{ RELOCATION_ID(25684, 26231), OFFSET(0x44F, 0x46C) }; \
+
+#ifndef SKYRIM_NG
+			REL::Relocation<std::uintptr_t> target{ RELOCATION_ID(25684, 26231), OFFSET(0x44F, 0x46C) };
+#else
+			REL::Relocation<std::uintptr_t> target{ REL::VariantID(25684, 26231, 25684), REL::VariantOffset(0x44F, 0x46C, 0x44F)};
+#endif
 			stl::write_thunk_call<WeatherEventManager>(target.address());
 			return true;
 		}
