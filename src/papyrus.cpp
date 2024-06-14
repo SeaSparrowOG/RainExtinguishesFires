@@ -56,6 +56,10 @@ namespace Papyrus {
 		FireManipulator::Manager::GetSingleton()->UnFreezeReference(a_ref);
 	}
 
+	bool IsRaining(STATIC_ARGS) {
+		return Events::Weather::WeatherEventManager::GetSingleton()->IsRaining();
+	}
+
 	void Bind(VM& a_vm) {
 		BIND(GetVersion);
 		BIND(ExtinguishAllLoadedFires);
@@ -63,6 +67,7 @@ namespace Papyrus {
 		BIND(UnFreezeFire);
 		BIND(SetRainingFlag);
 		BIND(GetNearbyAssociatedReferences);
+		BIND(IsRaining);
 		BIND_EVENT(RegisterForAccurateWeatherChange, true);
 		BIND_EVENT(UnRegisterForAccurateWeatherChange, true);
 		BIND_EVENT(RegisterForInteriorExteriorChange, true);
