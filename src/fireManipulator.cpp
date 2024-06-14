@@ -212,10 +212,6 @@ namespace FireManipulator {
 					if (fireData->checkOcclusion) {
 						auto collision = Raycast::CheckClearance(a_ref);
 						auto distance = a_ref->data.location.GetDistance(collision);
-						_loggerInfo("Collision Distance for {}:\n    {}", _debugEDID(baseForm), distance);
-						_loggerInfo("    {} // {} // {}\n    {} // {} // {}", 
-							a_ref->data.location.x, a_ref->data.location.y, a_ref->data.location.z, 
-							collision.x, collision.y, collision.z);
 						if (distance < 5000.0f) return continueContainer;
 					}
 
