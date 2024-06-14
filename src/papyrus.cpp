@@ -23,6 +23,16 @@ namespace Papyrus {
 		Events::Weather::WeatherEventManager::GetSingleton()->AddWeatherChangeListener(a_form, false);
 	}
 
+	void RegisterForInteriorExteriorChange(STATIC_ARGS, const RE::TESForm* a_form) {
+		if (!a_form) return;
+		Events::InteriorExterior::InteriorExteriorEventManager::GetSingleton()->AddInteriorExteriorListener(a_form, true);
+	}
+
+	void UnRegisterForInteriorExteriorChange(STATIC_ARGS, const RE::TESForm* a_form) {
+		if (!a_form) return;
+		Events::InteriorExterior::InteriorExteriorEventManager::GetSingleton()->AddInteriorExteriorListener(a_form, false);
+	}
+
 	void ExtinguishAllLoadedFires(STATIC_ARGS) {
 		FireManipulator::Manager::GetSingleton()->ExtinguishAllFires();
 	}
@@ -55,6 +65,8 @@ namespace Papyrus {
 		BIND(GetNearbyAssociatedReferences);
 		BIND_EVENT(RegisterForAccurateWeatherChange, true);
 		BIND_EVENT(UnRegisterForAccurateWeatherChange, true);
+		BIND_EVENT(RegisterForInteriorExteriorChange, true);
+		BIND_EVENT(UnRegisterForInteriorExteriorChange, true);
 	}
 
 	bool RegisterFunctions(VM* a_vm) {

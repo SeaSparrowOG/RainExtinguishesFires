@@ -89,6 +89,51 @@ namespace Events {
 		}
 	}
 
+	namespace InteriorExterior {
+		bool InteriorExteriorEventManager::RegisterListener() {
+#ifndef SKYRIM_NG
+			RE::PlayerCharacter::GetSingleton()->AddEventSink(this);
+#else 
+
+#endif
+			return true;
+		}
+
+		void InteriorExteriorEventManager::AddInteriorExteriorListener(const RE::TESForm* a_form, bool a_listen) {
+			if (a_listen) {
+				this->interiorExteriorChange.Register(a_form);
+			}
+			else {
+				this->interiorExteriorChange.Unregister(a_form);
+			}
+		}
+
+		void InteriorExteriorEventManager::SendInteriorExteriorEvent(bool a_movedToInterior) {
+			auto* skySingleton = RE::Sky::GetSingleton();
+			auto* currentWeather = skySingleton ? skySingleton->currentWeather : nullptr;
+			bool isRaining = currentWeather ? 
+				currentWeather->data.flags & rainyFlag || currentWeather->data.flags & snowyFlag
+				: false;
+
+			this->interiorExteriorChange.QueueEvent(a_movedToInterior, isRaining);
+		}
+
+		RE::BSEventNotifyControl InteriorExteriorEventManager::ProcessEvent(const RE::BGSActorCellEvent* a_event, RE::BSTEventSource<RE::BGSActorCellEvent>* a_eventSource) {
+			if (!(a_event && a_eventSource)) return continueEvent;
+			if (a_event->flags & RE::BGSActorCellEvent::CellFlag::kLeave) return continueEvent;
+
+			auto eventActor = a_event->actor.get().get();
+			if (!eventActor) return continueEvent;
+			if (eventActor != RE::PlayerCharacter::GetSingleton()) return continueEvent;
+
+			auto* parentCell = RE::TESForm::LookupByID(a_event->cellID) ? RE::TESForm::LookupByID(a_event->cellID)->As<RE::TESObjectCELL>() : nullptr;
+			if (!parentCell) return continueEvent;
+
+			SendInteriorExteriorEvent(parentCell->IsInteriorCell());
+			return continueEvent;
+		}
+	}
+
 	namespace Weather {
 		bool WeatherEventManager::InstallHook() {
 
@@ -145,6 +190,9 @@ namespace Events {
 		if (!Weather::WeatherEventManager::GetSingleton()->InstallHook()) success = false;
 		if (success && !Hit::HitEvenetManager::GetSingleton()->RegisterListener()) success = false;
 		if (success && !Load::LoadEventManager::GetSingleton()->RegisterListener()) success = false;
+		if (success) {
+			InteriorExterior::InteriorExteriorEventManager::GetSingleton()->RegisterListener();
+		}
 
 		if (!success) {
 			Hit::HitEvenetManager::GetSingleton()->UnregisterListener();

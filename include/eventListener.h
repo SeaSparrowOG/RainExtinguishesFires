@@ -52,6 +52,23 @@ namespace Events {
 		};
 	}
 
+	namespace InteriorExterior {
+		class InteriorExteriorEventManager :
+			public RE::BSTEventSink<RE::BGSActorCellEvent>,
+			public ISingleton<InteriorExteriorEventManager> {
+		public:
+			bool RegisterListener();
+			void AddInteriorExteriorListener(const RE::TESForm* a_form, bool a_listen);
+			void SendInteriorExteriorEvent(bool a_movedToInterior);
+
+		private:
+			RE::BSEventNotifyControl ProcessEvent(const RE::BGSActorCellEvent* a_event, RE::BSTEventSource<RE::BGSActorCellEvent>* a_eventSource) override;
+
+			//Members
+			SKSE::RegistrationSet<bool, bool> interiorExteriorChange{ "OnInteriorExteriorChange"sv };
+		};
+	}
+
 	namespace Weather {
 #define rainyFlag RE::TESWeather::WeatherDataFlag::kRainy
 #define snowyFlag RE::TESWeather::WeatherDataFlag::kSnow 
