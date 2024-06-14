@@ -94,7 +94,7 @@ namespace Events {
 #ifndef SKYRIM_NG
 			RE::PlayerCharacter::GetSingleton()->AddEventSink(this);
 #else 
-
+			RE::PlayerCharacter::GetSingleton()->AsBGSActorCellEventSource()->AddEventSink(this);
 #endif
 			return true;
 		}
