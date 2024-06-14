@@ -9,7 +9,8 @@ namespace CachedData {
 		kLightRadius,
 		kSmokeRadius,
 		kReferenceRadius, 
-		kResetTime
+		kResetTime,
+		kCheckOcclusion
 	};
 
 	class Fires : public ISingleton<Fires> {
@@ -29,6 +30,7 @@ namespace CachedData {
 	private:
 		bool checkSmoke{ false };
 		bool checkLight{ false };
+		bool checkOcclusion{ false };
 		double lookupReferenceRadius{ 0.0 };
 		double lookupLightRadius{ 0.0 };
 		double lookupSmokeRadius{ 0.0 };

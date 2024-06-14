@@ -32,7 +32,14 @@ namespace {
 namespace INI {
 	bool ShouldRebuildINI(CSimpleIniA* a_ini) {
 		const char* section = "General";
-		const char* keys[] = { "bSquashLights", "bSquashSmoke", "fReferenceLookupRadius", "fLightLookupRadius", "fSmokeLookupRadius", "fDaysToReset" };
+		const char* keys[] = { 
+			"bSquashLights", 
+			"bSquashSmoke", 
+			"bCheckOcclusion", 
+			"fReferenceLookupRadius", 
+			"fLightLookupRadius", 
+			"fSmokeLookupRadius", 
+			"fDaysToReset" };
 		int sectionLength = sizeof(keys) / sizeof(keys[0]);
 		std::list<CSimpleIniA::Entry> keyHolder;
 
@@ -63,20 +70,22 @@ namespace INI {
 			ini.Delete("General", NULL);
 			ini.SetBoolValue("General", "bSquashLights", true, ";Disables the nearest found light.");
 			ini.SetBoolValue("General", "bSquashSmoke", true, ";Disables the nearest found smoke object.");
-			ini.SetDoubleValue("General", "fReferenceLookupRadius", 300.0, ";The distance over which to search for dyndolod fires.");
-			ini.SetDoubleValue("General", "fLightLookupRadius", 300.0, ";The distance over which to search for smoke.");
-			ini.SetDoubleValue("General", "fSmokeLookupRadius", 300.0, ";The distance over which to search for light.");
+			ini.SetBoolValue("General", "bCheckOcclusion", true, ";Fires that are occluded (are covered) will not be extinguished if true.");
+			ini.SetDoubleValue("General", "fReferenceLookupRadius", 600.0, ";The distance over which to search for dyndolod fires.");
+			ini.SetDoubleValue("General", "fLightLookupRadius", 600.0, ";The distance over which to search for smoke.");
+			ini.SetDoubleValue("General", "fSmokeLookupRadius", 600.0, ";The distance over which to search for light.");
 			ini.SetDoubleValue("General", "fDaysToReset", 3.0, ";How long it will take for unlit fires to be re-lit.");
 			ini.SaveFile(f.c_str());
 		}
 		
 		auto* cachedDataSingleton = CachedData::Fires::GetSingleton();
-		cachedDataSingleton->UpdateSetting(CachedData::Setting::kReferenceRadius, false, ini.GetDoubleValue("General", "fReferenceLookupRadius", 300.0));
+		cachedDataSingleton->UpdateSetting(CachedData::Setting::kReferenceRadius, false, ini.GetDoubleValue("General", "fReferenceLookupRadius", 600.0));
 		cachedDataSingleton->UpdateSetting(CachedData::Setting::kResetTime, false, ini.GetDoubleValue("General", "fDaysToReset", 3.0));
 		cachedDataSingleton->UpdateSetting(CachedData::Setting::kLightEnabled, ini.GetBoolValue("General", "bSquashLights", true));
 		cachedDataSingleton->UpdateSetting(CachedData::Setting::kSmokeEnabled, ini.GetBoolValue("General", "bSquashSmoke", true));
-		cachedDataSingleton->UpdateSetting(CachedData::Setting::kLightRadius, false, ini.GetDoubleValue("General", "fLightLookupRadius", 300.0));
-		cachedDataSingleton->UpdateSetting(CachedData::Setting::kSmokeRadius, false, ini.GetDoubleValue("General", "fSmokeLookupRadius", 300.0));
+		cachedDataSingleton->UpdateSetting(CachedData::Setting::kCheckOcclusion, ini.GetBoolValue("General", "bCheckOcclusion", true));
+		cachedDataSingleton->UpdateSetting(CachedData::Setting::kLightRadius, false, ini.GetDoubleValue("General", "fLightLookupRadius", 600.0));
+		cachedDataSingleton->UpdateSetting(CachedData::Setting::kSmokeRadius, false, ini.GetDoubleValue("General", "fSmokeLookupRadius", 600.0));
 
 		std::filesystem::path custom{ "./Data/SKSE/Plugins/RainExtinguishesFires_custom.ini" };
 		if (!std::filesystem::exists(f)) {
@@ -88,7 +97,7 @@ namespace INI {
 		customINI.LoadFile(custom.c_str());
 
 		if (customINI.KeyExists("General", "fReferenceLookupRadius")) {
-			cachedDataSingleton->UpdateSetting(CachedData::Setting::kReferenceRadius, customINI.GetDoubleValue("General", "fReferenceLookupRadius", 300.0));
+			cachedDataSingleton->UpdateSetting(CachedData::Setting::kReferenceRadius, customINI.GetDoubleValue("General", "fReferenceLookupRadius", 600.0));
 		}
 
 		if (customINI.KeyExists("General", "fDaysToReset")) {
@@ -103,12 +112,16 @@ namespace INI {
 			cachedDataSingleton->UpdateSetting(CachedData::Setting::kSmokeEnabled, customINI.GetBoolValue("General", "bSquashSmoke", true));
 		}
 
+		if (customINI.KeyExists("General", "bCheckOcclusion")) {
+			cachedDataSingleton->UpdateSetting(CachedData::Setting::kCheckOcclusion, customINI.GetBoolValue("General", "bCheckOcclusion", true));
+		}
+
 		if (customINI.KeyExists("General", "fLightLookupRadius")) {
-			cachedDataSingleton->UpdateSetting(CachedData::Setting::kLightRadius, customINI.GetDoubleValue("General", "fLightLookupRadius", 300.0));
+			cachedDataSingleton->UpdateSetting(CachedData::Setting::kLightRadius, customINI.GetDoubleValue("General", "fLightLookupRadius", 600.0));
 		}
 
 		if (customINI.KeyExists("General", "fSmokeLookupRadius")) {
-			cachedDataSingleton->UpdateSetting(CachedData::Setting::kSmokeRadius, customINI.GetDoubleValue("General", "fSmokeLookupRadius", 300.0));
+			cachedDataSingleton->UpdateSetting(CachedData::Setting::kSmokeRadius, customINI.GetDoubleValue("General", "fSmokeLookupRadius", 600.0));
 		}
 		return true;
 	}

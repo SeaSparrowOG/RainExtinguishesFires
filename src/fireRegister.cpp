@@ -76,6 +76,9 @@ namespace CachedData {
             if (a_settingDouble > 100.0) a_settingDouble = 100.0;
             this->requiredOffTime = a_settingDouble;
             break;
+        case kCheckOcclusion:
+            this->checkOcclusion = a_settingBool;
+            break;
         default:
             break;
         }
@@ -89,6 +92,7 @@ namespace CachedData {
         fireData.lightLookupRadius = this->lookupLightRadius;
         fireData.disableSmoke = this->checkSmoke;
         fireData.smokeLookupRadius = this->lookupSmokeRadius;
+        fireData.checkOcclusion = this->checkOcclusion;
 
         //Interesting ideas, bounding is wrong.
         //fireData.sizeFactor = std::floor(GetBaseSize(a_litForm) / GetBaseSize(fireData.offVersion) * 100.0) / 100.0;

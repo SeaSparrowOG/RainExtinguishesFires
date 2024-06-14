@@ -1,5 +1,6 @@
 #include "fireManipulator.h"
 #include "fireRegister.h"
+#include "raycastHelper.h"
 
 namespace FireManipulator {
 	void Manager::FreezeReference(RE::TESObjectREFR* a_ref) {
@@ -208,6 +209,16 @@ namespace FireManipulator {
 
 				auto* fireData = cachedDataSingleton->GetFireData(baseForm);
 				if (fireData) {
+					if (fireData->checkOcclusion) {
+						auto collision = Raycast::CheckClearance(a_ref);
+						auto distance = a_ref->data.location.GetDistance(collision);
+						_loggerInfo("Collision Distance for {}:\n    {}", _debugEDID(baseForm), distance);
+						_loggerInfo("    {} // {} // {}\n    {} // {} // {}", 
+							a_ref->data.location.x, a_ref->data.location.y, a_ref->data.location.z, 
+							collision.x, collision.y, collision.z);
+						if (distance < 5000.0f) return continueContainer;
+					}
+
 					ExtinguishFire(a_ref, fireData, "FireInTheRain"sv);
 				}
 				return continueContainer;

@@ -4,5 +4,6 @@ set(headers ${headers}
 	include/fireManipulator.h
 	include/fireRegister.h
 	include/papyrus.h
+	include/raycastHelper.h
 	include/settingsReader.h
 )

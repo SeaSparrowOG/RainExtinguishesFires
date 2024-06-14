@@ -4,5 +4,6 @@ set(sources ${sources}
 	src/fireRegister.cpp
 	src/main.cpp
 	src/papyrus.cpp
+	src/raycastHelper.cpp
 	src/settingsReader.cpp
 )
