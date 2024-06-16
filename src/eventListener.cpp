@@ -84,7 +84,9 @@ namespace Events {
 				if (fireData->checkOcclusion) {
 					auto collision = Raycast::CheckClearance(eventReference);
 					auto distance = eventReference->data.location.GetDistance(collision);
-					if (distance > 5000.0f) return continueEvent;
+					if (distance < 2500.0f) {
+						return continueEvent;
+					}
 				}
 				FireManipulator::Manager::GetSingleton()->ExtinguishFire(eventReference, fireData, "FireInTheRain");
 			}

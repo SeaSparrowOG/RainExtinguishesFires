@@ -2,12 +2,13 @@
 
 namespace Raycast {
 	RE::NiPoint3 CheckClearance(RE::TESObjectREFR* caster) {
+		auto boundData = caster->GetBaseObject()->boundData;
 		auto havokWorldScale = RE::bhkWorld::GetWorldScale();
 		RE::bhkPickData pick_data;
 		RE::NiPoint3 ray_start, ray_end;
 
 		ray_start = caster->data.location;
-		ray_start.z += 100.0;
+		ray_start.z += 100.0 + boundData.boundMax.z;
 		ray_end = ray_start;
 		ray_end.z += 50000;
 

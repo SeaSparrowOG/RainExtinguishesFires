@@ -212,7 +212,9 @@ namespace FireManipulator {
 					if (fireData->checkOcclusion) {
 						auto collision = Raycast::CheckClearance(a_ref);
 						auto distance = a_ref->data.location.GetDistance(collision);
-						if (distance < 5000.0f) return continueContainer;
+						if (distance < 2500.0f) {
+							return continueContainer;
+						}
 					}
 
 					ExtinguishFire(a_ref, fireData, "FireInTheRain"sv);
