@@ -1,0 +1,21 @@
+name: template
+alias: tmp
+script: SEA_TemplateProject
+help: Tests for the Custom Console integration.
+subs:
+  - name: getversion
+    alias: gvs
+    func: GetVersion
+  - name: debug_setform
+    alias: dsf
+    func: UnitTest_Serialization
+    args:
+      - name: form
+        type: String
+        required: false
+  - name: debug_getform
+    alias: dss
+    func: UnitTest_SerializationState
+  - name: debug_resetform
+    alias: dsr
+    func: UnitTest_SerializationReset

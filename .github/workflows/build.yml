@@ -1,0 +1,63 @@
+name: Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
+  VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg-cache
+  VCPKG_ROOT: C:\vcpkg
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup vcpkg
+      if: contains(github.event.head_commit.message, 'build_artifact')
+      run: |
+        mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+        cd $env:VCPKG_INSTALLATION_ROOT
+        ./bootstrap-vcpkg.bat
+        ./vcpkg --version > ${{ github.workspace }}/vcpkg-version.txt
+
+    - name: Cache vcpkg
+      if: contains(github.event.head_commit.message, 'build_artifact')
+      uses: actions/cache@v4
+      id: vcpkg-cache
+      env:
+        cache-name: vcpkg-cache
+      with:
+        path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('main/**/vcpkg.json', 'vcpkg-version.txt') }}
+
+    - name: Configure CMake
+      if: contains(github.event.head_commit.message, 'build_artifact')
+      run: |
+        cmake --preset vs2022-windows-vcpkg-release -Wno-deprecated
+
+    - name: Build
+      if: contains(github.event.head_commit.message, 'build_artifact')
+      run: |
+        cmake --build ${{ github.workspace }}/build --config ${{ env.BUILD_TYPE }}
+
+    - name: Install
+      if: contains(github.event.head_commit.message, 'build_artifact')
+      run: |
+        cmake --install ${{ github.workspace }}/build --component "components" --config ${{ env.BUILD_TYPE }} --prefix ${{ github.workspace }}/ReleaseBuild
+        cmake --install ${{ github.workspace }}/build --component "SKSEPlugin" --config ${{ env.BUILD_TYPE }} --prefix ${{ github.workspace }}/ReleaseBuild
+
+    - name: Upload Artifact
+      if: contains(github.event.head_commit.message, 'build_artifact')
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ github.event.repository.name }}
+        path: ${{ github.workspace }}/ReleaseBuild

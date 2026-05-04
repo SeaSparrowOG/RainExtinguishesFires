@@ -2,19 +2,8 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/buildae
 /.vs
-/buildae-old
-/out/build/x64-debug
 /build
-/build
-RainExtinguishesFires.code-workspace
-/build-1597/CMakeFiles
-/build-1597/vcpkg_installed
-/build-1597
-/build-161170
-/build-15
-/build-16
-/build-16-old
-/build-vr
 /build-ng
+/build-test
+/build-outdated

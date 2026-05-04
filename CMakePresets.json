@@ -33,56 +33,58 @@
     {
       "name": "vs2022",
       "hidden": true,
-      "generator": "Visual Studio 17 2022",
-      "toolset": "v143"
+      "generator": "Visual Studio 18 2026"
     },
     {
-      "name": "ng",
-      "hidden": true,
-      "binaryDir": "${sourceDir}/build-ng",
-      "cacheVariables": {
-        "BUILD_NG": true
-      }
-    },
-    {
-      "name": "ae",
+      "name": "release",
       "hidden": true,
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
-        "BUILD_SKYRIMAE": true
+        "FULL_RELEASE": true
       }
     },
     {
-      "name": "vs2022-windows-vcpkg-ng",
-      "inherits": [
-        "cmake-dev",
-        "vcpkg",
-        "windows",
-        "vs2022",
-        "ng"
-      ]
+      "name": "test",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build-test"
     },
     {
-      "name": "vs2022-windows-vcpkg-ae",
+      "name": "vs2022-windows-vcpkg-release",
       "inherits": [
         "cmake-dev",
         "vcpkg",
         "windows",
         "vs2022",
-        "ae"
-      ]
+        "release"
+      ],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "vs2022-windows-vcpkg-test",
+      "inherits": [
+        "cmake-dev",
+        "vcpkg",
+        "windows",
+        "vs2022",
+        "test"
+      ],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
     }
   ],
   "buildPresets": [
     {
       "name": "Release",
-      "configurePreset": "vs2022-windows-vcpkg-ae",
+      "configurePreset": "vs2022-windows-vcpkg-release",
       "configuration": "Release"
     },
     {
-      "name": "Release - NG",
-      "configurePreset": "vs2022-windows-vcpkg-ng",
-      "configuration": "Release"
+      "name": "Test",
+      "configurePreset": "vs2022-windows-vcpkg-test",
+      "configuration": "Debug"
     }
   ]
 }
