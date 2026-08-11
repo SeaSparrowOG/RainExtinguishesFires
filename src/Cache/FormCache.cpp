@@ -32,11 +32,11 @@ namespace {
 			std::string_view file;
 			RE::FormID formID = 0u;
 			if (clib_util::string::is_only_hex(parts[0])) {
-				formID = clib_util::string::to_num<RE::FormID>(parts[0]);
+				formID = clib_util::string::to_num<RE::FormID>(parts[0], true);
 				file = parts[1];
 			}
 			else if (clib_util::string::is_only_hex(parts[1])) {
-				formID = clib_util::string::to_num<RE::FormID>(parts[1]);
+				formID = clib_util::string::to_num<RE::FormID>(parts[1], true);
 				file = parts[0];
 			}
 			else {
@@ -79,6 +79,10 @@ namespace Cache
 					logger::critical("  - Error reading config: {}"sv, name);
 				}
 			}
+			else {
+				logger::critical("  - Error reading config (not array or object): {}"sv, name);
+				return false;
+			}
 		}
 
 		return success;
@@ -106,10 +110,10 @@ namespace Cache
 				return true;
 			}
 			
-			if (!lit->Is(RE::FormType::MovableStatic) && !lit->Is(RE::FormType::Static)) {
+			if (!lit->Is(RE::FormType::MovableStatic) && !lit->Is(RE::FormType::Activator)) {
 				return false;
 			}
-			else if (!unlit->Is(RE::FormType::MovableStatic) && !unlit->Is(RE::FormType::Static)) {
+			else if (!unlit->Is(RE::FormType::MovableStatic) && !unlit->Is(RE::FormType::Activator)) {
 				return false;
 			}
 			auto litID = lit->GetFormID();
