@@ -2,9 +2,9 @@
 
 namespace FireManipulator
 {
-	static void Extinguish(RE::TESObjectREFR* fire);
-	static void Relight(RE::TESObjectREFR* fire);
-	static void ExtinguishCell(RE::TESObjectCELL* cell);
+	void Extinguish(RE::TESObjectREFR* fire);
+	void Relight(RE::TESObjectREFR* fire);
+	void ExtinguishCell(RE::TESObjectCELL* cell);
 
 	class Manipulator final : 
 		public REX::Singleton<Manipulator>,
@@ -32,6 +32,7 @@ namespace FireManipulator
 		std::vector<PendingData>   _pending;
 
 		bool running = false;
+		bool queued = false;
 
 		void ExtinguishImpl(const PendingData& data);
 	};

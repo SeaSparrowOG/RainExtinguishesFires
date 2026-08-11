@@ -46,7 +46,8 @@ namespace
 		}
 
 		const auto& smokes = cache->GetSmokes();
-		return smoke && smokes.contains(smoke->GetFormID());
+		const auto* base = smoke ? smoke->GetBaseObject() : nullptr;
+		return base && smokes.contains(base->GetFormID());
 	}
 
 	static RE::TESForm* FindUnlitPair(RE::FormID id) {
@@ -152,17 +153,22 @@ namespace FireManipulator
 				return ContainerResult::kContinue;
 			}
 
-			const auto formID = ref->GetFormID();
+			const auto* base = ref ? ref->GetBaseObject() : nullptr;
+			const auto formID = base ? base->GetFormID() : 0;
+			if (formID == 0) {
+				return RE::BSContainer::ForEachResult::kContinue;
+			}
+
 			if (IsSmoke(ref)) {
 				foundSmokes.emplace_back(ref);
 			}
-			else if (ref->GetBaseObject()->Is(RE::FormType::Light)) {
+			else if (base->Is(RE::FormType::Light)) {
 				foundLights.emplace_back(ref);
 			}
-			else if (auto* lit = FindUnlitPair(formID); lit && CanExtinguishFire(ref)) {
+			else if (auto* unlit = FindUnlitPair(formID); unlit) {
 				foundLitFires.push_back(ref);
 			}
-			else if (auto* unlit = FindLitPair(formID); unlit) {
+			else if (auto* lit = FindLitPair(formID); lit) {
 				foundUnlitFires.emplace_back(ref);
 			}
 			return ContainerResult::kContinue;
@@ -175,8 +181,17 @@ namespace FireManipulator
 			}
 			_frozen.insert(id);
 
+			auto* litBase = lit->GetBaseObject();
+			auto litBaseID = litBase ? litBase->GetFormID() : 0;
+			auto* unlitBase = FindUnlitPair(litBaseID);
+			auto* unlitBound = unlitBase ? skyrim_cast<RE::TESBoundObject*>(unlitBase) : nullptr;
+			if (!unlitBound) {
+				continue;
+			}
+
 			PendingData data;
 			data.fire = lit;
+			data.unlit = unlitBound;
 			if (squashLight && !foundLights.empty()) {
 				auto* candidate = FindClosestFrom(lit, foundLights, lightDistance);
 				if (candidate) {
@@ -193,7 +208,10 @@ namespace FireManipulator
 			_pending.emplace_back(std::move(data));
 		}
 
-		tasks->AddTask(reinterpret_cast<::TaskDelegate*>(this));
+		if (!queued) {
+			queued = true;
+			tasks->AddTask(reinterpret_cast<::TaskDelegate*>(this));
+		}
 	}
 
 	void Manipulator::Extinguish(RE::TESObjectREFR* fire) {
@@ -245,20 +263,15 @@ namespace FireManipulator
 		running = true;
 
 		for (const auto& pending : _pending) {
-			auto* fire = pending.fire;
-			auto fireID = fire->GetFormID();
-
-			if (_frozen.contains(fireID)) {
-				continue;
-			}
-			_frozen.insert(fireID);
 			ExtinguishImpl(pending);
 		}
 	}
 
 	void Manipulator::Dispose() {
 		_pending.clear();
+		_frozen.clear();
 		running = false;
+		queued = false;
 	}
 
 	void Manipulator::ExtinguishImpl(const PendingData& data) {
