@@ -24,10 +24,6 @@ namespace Papyrus
 
 	}
 
-	static std::vector<RE::TESObjectREFR*> GetNearbyAssociatedReferences(STATIC_ARGS, RE::TESObjectREFR* a_fire) {
-		return {};
-	}
-
 	static bool RegisterForAllEvents(STATIC_ARGS, RE::TESForm* a_form) {
 		if (!a_form) {
 			a_vm->TraceStack("[RegisterForAllEvents]: Cannot call with a NONE form.", a_stackID, RE::BSScript::IVirtualMachine::Severity::kWarning);
@@ -45,17 +41,15 @@ namespace Papyrus
 		return true;
 	}
 
-	void Bind(VM& a_vm) {
+	static void Bind(VM& a_vm) {
 		logger::info("  >Binding GetVersion..."sv);
 		BIND(GetVersion);
 		logger::info("  >Binding IsRaining..."sv);
 		BIND(IsRaining);
 		logger::info("  >Binding ExtinguishAllLoadedFires..."sv);
 		BIND(ExtinguishAllLoadedFires);
-		logger::info("  >Binding GetNearbyAssociatedReferences..."sv);
-		BIND(RegisterForAllEvents);
 		logger::info("  >Binding RegisterForAllEvents..."sv);
-		BIND(GetNearbyAssociatedReferences);
+		BIND(RegisterForAllEvents);
 	}
 
 	bool RegisterFunctions(VM* a_vm) {

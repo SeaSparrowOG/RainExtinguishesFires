@@ -4,7 +4,7 @@ namespace Settings::JSON
 {
 	bool Holder::Load() {
 		Release();
-		
+
 		std::string jsonFolder = fmt::format(R"(.\Data\SKSE\Plugins\{})"sv, Plugin::NAME);
 		logger::info("  >Settings folder: {}."sv, jsonFolder);
 		if (!std::filesystem::exists(jsonFolder)) {

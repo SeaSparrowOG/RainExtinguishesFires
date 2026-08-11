@@ -12,7 +12,7 @@ namespace Settings
 			using ConfigMap = std::map<std::string, Json::Value>;
 
 			[[nodiscard]] bool Load();
-			const ConfigMap& GetConfigs() const;
+			const ConfigMap& GetConfigs() const { return _configs; }
 
 			void Release();
 			void LogErrors() const;

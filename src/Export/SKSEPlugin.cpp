@@ -1,3 +1,4 @@
+#include "Cache/FormCache.h"
 #include "Data/ModObjectManager.h"
 #include "Events/Events.h"
 #include "Hooks/Hooks.h"
@@ -17,6 +18,10 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 		SECTION_SEPARATOR;
 		if (!Events::InitializeListeners()) {
 			SKSE::stl::report_and_fail("Failed to initialize event listeners. Check the log for more information."sv);
+		}
+		SECTION_SEPARATOR;
+		if (!Cache::InitializeCache()) {
+			SKSE::stl::report_and_fail("Failed to initialize cache. Check the log for more information."sv);
 		}
 		SECTION_SEPARATOR;
 		logger::info("Finished startup tasks, enjoy your game!"sv);
