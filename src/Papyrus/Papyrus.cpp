@@ -1,7 +1,6 @@
 #include "papyrus.h"
 
-#include "Events/CellEvent/CellListener.h"
-#include "Hooks/Hooks.h"
+#include "FireManipulation/Manipulator.h"
 
 namespace Papyrus
 {
@@ -12,7 +11,7 @@ namespace Papyrus
 	static bool IsRaining(STATIC_ARGS) {
 		auto* sky = RE::Sky::GetSingleton();
 		if (!sky) {
-			a_vm->TraceStack("[IsRaining]: Failed to get internal Sky singleton.", 
+			a_vm->TraceStack("[IsRaining]: Failed to get the game's Sky singleton.", 
 				a_stackID, 
 				RE::BSScript::IVirtualMachine::Severity::kWarning);
 			return false;
@@ -20,25 +19,38 @@ namespace Papyrus
 		return sky->IsRaining() || sky->IsSnowing();
 	}
 
-	static void ExtinguishAllLoadedFires(STATIC_ARGS) {
-
+	static void UnFreezeFire(STATIC_ARGS, RE::TESObjectREFR* ref) {
+		static auto* manipulator = FireManipulator::Manipulator::GetSingleton();
+		if (!manipulator) {
+			a_vm->TraceStack("[UnFreezeFire]: Failed to get Fire Manipulator.",
+				a_stackID,
+				RE::BSScript::IVirtualMachine::Severity::kWarning);
+			return;
+		}
+		if (!ref) {
+			a_vm->TraceStack("[UnFreezeFire]: Cannot call this function with a NONE reference.",
+				a_stackID,
+				RE::BSScript::IVirtualMachine::Severity::kWarning);
+			return;
+		}
+		manipulator->UnFreezeReference(ref);
 	}
 
-	static bool RegisterForAllEvents(STATIC_ARGS, RE::TESForm* a_form) {
-		if (!a_form) {
-			a_vm->TraceStack("[RegisterForAllEvents]: Cannot call with a NONE form.", a_stackID, RE::BSScript::IVirtualMachine::Severity::kWarning);
-			return false;
+	static void FreezeFire(STATIC_ARGS, RE::TESObjectREFR* ref) {
+		static auto* manipulator = FireManipulator::Manipulator::GetSingleton();
+		if (!manipulator) {
+			a_vm->TraceStack("[FreezeFire]: Failed to get Fire Manipulator.",
+				a_stackID,
+				RE::BSScript::IVirtualMachine::Severity::kWarning);
+			return;
 		}
-		auto* actorCellEvent = Events::CellEvent::ActorCellEventListener::GetSingleton();
-		auto* weatherEvent = Hooks::WeatherManager::GetSingleton();
-		if (!actorCellEvent || !weatherEvent) {
-			a_vm->TraceStack("[RegisterForAllEvents]: Failed to get internal event listeners.", a_stackID, RE::BSScript::IVirtualMachine::Severity::kWarning);
-			return false;
+		if (!ref) {
+			a_vm->TraceStack("[FreezeFire]: Cannot call this function with a NONE reference.",
+				a_stackID,
+				RE::BSScript::IVirtualMachine::Severity::kWarning);
+			return;
 		}
-
-		actorCellEvent->RegisterFormForEvents(a_form);
-		weatherEvent->RegisterFormForEvents(a_form);
-		return true;
+		manipulator->FreezeReference(ref);
 	}
 
 	static void Bind(VM& a_vm) {
@@ -47,9 +59,9 @@ namespace Papyrus
 		logger::info("  >Binding IsRaining..."sv);
 		BIND(IsRaining);
 		logger::info("  >Binding ExtinguishAllLoadedFires..."sv);
-		BIND(ExtinguishAllLoadedFires);
+		BIND(UnFreezeFire);
 		logger::info("  >Binding RegisterForAllEvents..."sv);
-		BIND(RegisterForAllEvents);
+		BIND(FreezeFire);
 	}
 
 	bool RegisterFunctions(VM* a_vm) {

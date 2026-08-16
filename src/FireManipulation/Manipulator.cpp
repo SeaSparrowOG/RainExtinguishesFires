@@ -1,6 +1,7 @@
 #include "Manipulator.h"
 
 #include "Cache/FormCache.h"
+#include "RE/Offset.h"
 #include "Settings/INI/INISettings.h"
 
 namespace
@@ -18,322 +19,351 @@ namespace
 		}
 		return true;
 	}
-
-	static RE::TESObjectREFR* FindClosestFrom(RE::TESObjectREFR* from, 
-		std::vector<RE::TESObjectREFR*>& nearby,
-		float radius) 
-	{
-		auto it = nearby.end();
-		for (auto current = nearby.begin();current < nearby.end(); ++current) {
-			const float distance = (*current)->GetDistance(from);
-			if (distance < radius) {
-				radius = distance;
-				it = current;
-			}
-		}
-		if (it != nearby.end()) {
-			auto* nearest = *it;
-			nearby.erase(it);
-			return nearest;
-		}
-		return nullptr;
-	}
-
-	static bool IsSmoke(RE::TESObjectREFR* smoke) {
-		static const auto* cache = Cache::FormCache::GetSingleton();
-		if (!cache) {
-			return false;
-		}
-
-		const auto& smokes = cache->GetSmokes();
-		const auto* base = smoke ? smoke->GetBaseObject() : nullptr;
-		return base && smokes.contains(base->GetFormID());
-	}
-
-	static RE::TESForm* FindUnlitPair(RE::FormID id) {
-		static const auto* cache = Cache::FormCache::GetSingleton();
-		if (!cache) {
-			return nullptr;
-		}
-
-		const auto& fireMap = cache->GetLitFires();
-		if (fireMap.empty()) {
-			return nullptr;
-		}
-		const auto found = fireMap.find(id);
-		if (found == fireMap.end()) {
-			return nullptr;
-		}
-
-		return RE::TESForm::LookupByID(found->second);
-	}
-
-	static RE::TESForm* FindLitPair(RE::FormID id) {
-		static const auto* cache = Cache::FormCache::GetSingleton();
-		if (!cache) {
-			return nullptr;
-		}
-
-		const auto& fireMap = cache->GetUnlitFires();
-		if (fireMap.empty()) {
-			return nullptr;
-		}
-		const auto found = fireMap.find(id);
-		if (found == fireMap.end()) {
-			return nullptr;
-		}
-
-		return RE::TESForm::LookupByID(found->second);
-	}
 }
 
 namespace FireManipulator
 {
-	void Extinguish(RE::TESObjectREFR* fire) {
-		static auto* manipulator = Manipulator::GetSingleton();
-		if (!manipulator || !fire) {
-			return;
+	ObjectData GetObjectData(RE::TESBoundObject* base) {
+		using Type = FireManipulator::ReferenceType;
+
+		ObjectData data;
+
+		if (base->Is(RE::FormType::Light)) {
+			data.type = Type::Light;
+			return data;
 		}
 
-		manipulator->Extinguish(fire);
+		static const auto* cache = Cache::FormCache::GetSingleton();
+		if (!cache) {
+			return data;
+		}
+
+		static const auto& litMap = cache->GetLitFires();
+		static const auto& unlitMap = cache->GetUnlitFires();
+		static const auto& smokeSet = cache->GetSmokes();
+		if (litMap.empty()) {
+			return data;
+		}
+		const auto baseID = base->GetFormID();
+		auto foundUnlitPair = litMap.find(baseID);
+		if (foundUnlitPair != litMap.end()) {
+			auto* foundForm = RE::TESForm::LookupByID(foundUnlitPair->second);
+			if (foundForm) {
+				data.type = Type::LitFire;
+				data.pair = skyrim_cast<RE::TESBoundObject*>(foundForm);
+				return data;
+			}
+		}
+		auto foundLitPair = unlitMap.find(baseID);
+		if (foundLitPair != unlitMap.end()) {
+			auto* foundForm = RE::TESForm::LookupByID(foundLitPair->second);
+			if (foundForm) {
+				data.type = Type::UnlitFire;
+				data.pair = skyrim_cast<RE::TESBoundObject*>(foundForm);
+				return data;
+			}
+		}
+		if (smokeSet.contains(baseID)) {
+			data.type = Type::Smoke;
+		}
+		return data;
 	}
 
-	void Relight(RE::TESObjectREFR* fire) {
-		static auto* manipulator = Manipulator::GetSingleton();
-		if (!manipulator || !fire) {
-			return;
-		}
+	using EventControl = RE::BSEventNotifyControl;
 
-		manipulator->Relight(fire);
+	bool Manipulator::HookWeatherChange() {
+		logger::info("   - Installing Weather Change Hook..."sv);
+		REL::Relocation<std::uintptr_t> target{ RE::Offset::Sky::UpdateWeather, RE::Offset::Sky::UpdateWeather__ChangeWeather };
+		if (!REL::make_pattern<"E8">().match(target.address())) {
+			logger::error("    Failed to validate OPCode."sv);
+			return false;
+		}
+		auto& trampoline = SKSE::GetTrampoline();
+		_changeWeather = trampoline.write_call<5>(target.address(), &ChangeWeather);
+		return true;
 	}
 
-	void ExtinguishCell(RE::TESObjectCELL* cell) {
-		static auto* manipulator = Manipulator::GetSingleton();
-		if (!manipulator || !cell) {
-			return;
-		}
-
-		manipulator->MassExtinguish(cell);
+	void Manipulator::InstallPlayerUpdateHook() {
+		logger::info("  - Installing Update Hook..."sv);
+		REL::Relocation<std::uintptr_t> VTABLE{ RE::PlayerCharacter::VTABLE[0] };
+		_update = VTABLE.write_vfunc(0xAD, Update);
 	}
 
-	void Manipulator::MassExtinguish(RE::TESObjectCELL* cell) {
-		assert(cell);
-
-		bool squashLight = Settings::INI::GetSetting<bool>(
-			Settings::INI::GENERAL_SQUASH_LIGHTS.data())
-			.value_or(false);
-		bool squashSmoke = Settings::INI::GetSetting<bool>(
-			Settings::INI::GENERAL_SQUASH_SMOKE.data())
-			.value_or(false);
-		float lightDistance = Settings::INI::GetSetting<bool>(
-			Settings::INI::GENERAL_LOOKUP_LIGHT.data())
-			.value_or(250.0f);
-		float smokeDistance = Settings::INI::GetSetting<bool>(
-			Settings::INI::GENERAL_LOOKUP_SMOKE.data())
-			.value_or(250.0f);
-
-		std::vector<RE::TESObjectREFR*> foundSmokes;
-		std::vector<RE::TESObjectREFR*> foundLights;
-		std::vector<RE::TESObjectREFR*> foundLitFires;
-		std::vector<RE::TESObjectREFR*> foundUnlitFires;
-
-		foundSmokes.reserve(16);
-		foundLights.reserve(16);
-		foundLitFires.reserve(16);
-		foundUnlitFires.reserve(16);
-
-		auto* tasks = SKSE::GetTaskInterface();
-		if (!tasks) {
-			return; //what
+	bool Manipulator::RegisterForEvents() {
+		logger::info("  - Registering event listeners..."sv);
+		auto* sourceHolder = RE::ScriptEventSourceHolder::GetSingleton();
+		if (!sourceHolder) {
+			logger::info("    Failed to get the game's scripted event source holder. You will crash later, and it won't be my fault."sv);
+			return false;
 		}
 
-		cell->ForEachReference([&](RE::TESObjectREFR* ref) {
-			using ContainerResult = RE::BSContainer::ForEachResult;
-			if (!ref || !ref->Is3DLoaded() || ref->IsDisabled()) {
-				return ContainerResult::kContinue;
-			}
+		sourceHolder->AddEventSink<RE::TESCellAttachDetachEvent>(this);
+		sourceHolder->AddEventSink<RE::TESCellFullyLoadedEvent>(this);
+		sourceHolder->AddEventSink<RE::TESHitEvent>(this);
 
-			const auto* base = ref ? ref->GetBaseObject() : nullptr;
-			const auto formID = base ? base->GetFormID() : 0;
-			if (formID == 0) {
-				return RE::BSContainer::ForEachResult::kContinue;
-			}
-
-			if (IsSmoke(ref)) {
-				foundSmokes.emplace_back(ref);
-			}
-			else if (base->Is(RE::FormType::Light)) {
-				foundLights.emplace_back(ref);
-			}
-			else if (auto* unlit = FindUnlitPair(formID); unlit) {
-				foundLitFires.push_back(ref);
-			}
-			else if (auto* lit = FindLitPair(formID); lit) {
-				foundUnlitFires.emplace_back(ref);
-			}
-			return ContainerResult::kContinue;
-		});
-
-		for (auto* lit : foundLitFires) {
-			auto id = lit->GetFormID();
-			if (_frozen.contains(id)) {
-				continue;
-			}
-			_frozen.insert(id);
-
-			auto* litBase = lit->GetBaseObject();
-			auto litBaseID = litBase ? litBase->GetFormID() : 0;
-			auto* unlitBase = FindUnlitPair(litBaseID);
-			auto* unlitBound = unlitBase ? skyrim_cast<RE::TESBoundObject*>(unlitBase) : nullptr;
-			if (!unlitBound) {
-				continue;
-			}
-
-			PendingData data;
-			data.fire = lit;
-			data.unlit = unlitBound;
-			if (squashLight && !foundLights.empty()) {
-				auto* candidate = FindClosestFrom(lit, foundLights, lightDistance);
-				if (candidate) {
-					data.light = candidate;
-				}
-			}
-			if (squashSmoke && !foundSmokes.empty()) {
-				auto* candidate = FindClosestFrom(lit, foundSmokes, smokeDistance);
-				if (candidate) {
-					data.smoke = candidate;
-				}
-			}
-
-			_pending.emplace_back(std::move(data));
+		auto* player = RE::PlayerCharacter::GetSingleton();
+		if (!player) {
+			logger::critical("    Failed to get the game's player singleton. You will crash later, and it won't be my fault."sv);
+			return false;
 		}
 
-		if (!queued) {
-			queued = true;
-			tasks->AddTask(reinterpret_cast<::TaskDelegate*>(this));
-		}
+		player->AddEventSink<RE::BGSActorCellEvent>(this);
+		return true;
 	}
 
-	void Manipulator::Extinguish(RE::TESObjectREFR* fire) {
-		assert(fire);
-		const auto formID = fire->GetFormID();
-
-		auto* unlit = FindUnlitPair(formID);
-		if (!unlit) {
-			return;
+	EventControl Manipulator::ProcessEvent(const RE::BGSActorCellEvent* a_event,
+		RE::BSTEventSource<RE::BGSActorCellEvent>*)
+	{
+		if (!a_event || 
+			!a_event->actor || 
+			!a_event->flags.all(RE::BGSActorCellEvent::CellFlag::kEnter) ||
+			!a_event->actor.get()->IsPlayerRef()) 
+		{
+			return EventControl::kContinue;
 		}
 
-		auto* cell = fire->GetParentCell();
-		if (!cell) {
-			return;
-		}
-		if (!cell->cellState.all(RE::TESObjectCELL::CellState::kAttached)) {
-			return;
-		}
-
-		if (_frozen.contains(formID)) {
-			return;
-		}
-		_frozen.insert(formID);
-
-		RE::TESObjectREFR* smoke = nullptr;
-
-		float lastDistance = 9999.9f;
-		cell->ForEachReference([&fire, &lastDistance, &smoke](RE::TESObjectREFR* ref) {
-			if (!IsSmoke(ref) || !ref->Is3DLoaded()) {
-				return RE::BSContainer::ForEachResult::kContinue;
-			}
-			const auto distance = ref->GetDistance(fire);
-			if (distance < lastDistance) {
-				lastDistance = distance;
-				smoke = ref;
-			}
-			return RE::BSContainer::ForEachResult::kContinue;
-		});
-	}
-
-	void Manipulator::Relight(RE::TESObjectREFR* fire) {
+		auto* cell = RE::TESForm::LookupByID<RE::TESObjectCELL>(a_event->cellID);
 		
+		return EventControl::kContinue;
 	}
 
-	void Manipulator::Run() {
-		if (running) {
-			return;
-		}
-		running = true;
-
-		for (const auto& pending : _pending) {
-			ExtinguishImpl(pending);
-		}
-	}
-
-	void Manipulator::Dispose() {
-		_pending.clear();
-		_frozen.clear();
-		running = false;
-		queued = false;
-	}
-
-	void Manipulator::ExtinguishImpl(const PendingData& data) {
-		auto* vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
-		auto* handlePolicy = vm ? vm->GetObjectHandlePolicy() : nullptr;
-		if (!handlePolicy) {
-			return;
+	EventControl Manipulator::ProcessEvent(const RE::TESCellAttachDetachEvent* a_event,
+		RE::BSTEventSource<RE::TESCellAttachDetachEvent>*)
+	{
+		if (!a_event || !a_event->reference) {
+			return EventControl::kContinue;
 		}
 
-		auto* lit = data.fire;
-		auto placedOff = lit->PlaceObjectAtMe(data.unlit, false);
-		if (!placedOff) {
-			return;
+		auto& ref = a_event->reference;
+		const auto refID = ref->GetFormID();
+		if ((refID & 0xFF000000) == 0xFF000000) {
+			return EventControl::kContinue;
 		}
 
-		RE::VMHandle handle = handlePolicy->GetHandleForObject(RE::TESObjectREFR::FORMTYPE, placedOff.get());
-		if (!vm->attachedScripts.contains(handle)) {
-			placedOff->DeleteThis();
-			return;
+		auto* base = ref->GetBaseObject();
+		auto* cell = ref->GetParentCell();
+		if (!cell || !base) {
+			return EventControl::kContinue;
 		}
 
-		auto found = vm->attachedScripts.find(handle);
-		if (found == vm->attachedScripts.end()) {
-			placedOff->DeleteThis();
-			return;
+		auto data = GetObjectData(base);
+		if (data.type == ReferenceType::None) {
+			return EventControl::kContinue;
 		}
 
-		_frozen.insert(placedOff->GetFormID());
-		placedOff->SetScale(lit->GetScale());
-		placedOff->MoveTo(lit);
-		placedOff->SetAngle(lit->GetAngle());
-
-		bool errored = true;
-		for (auto& script : found->second) {
-			auto* info = script ? script->GetTypeInfo() : nullptr;
-			if (!info || info->GetName() != "REF_ObjectRefOffController"sv) {
-				continue;
+		auto it = _cellDataMap.find(cell->GetFormID());
+		if (it == _cellDataMap.end()) {
+			auto [where, inserted] = _cellDataMap.emplace(cell->GetFormID(), CellData::CellData());
+			if (!inserted) {
+				return EventControl::kContinue;
 			}
+			it = where;
+		}
 
-			auto relatedFlame = script->GetProperty("RelatedFlame");
-			auto addExtProperty = script->GetProperty("RelatedObjects");
-			auto dayAttached = script->GetProperty("DayAttached");
-			if (!(relatedFlame && addExtProperty && dayAttached)) {
-				continue;
+		if (a_event->attached) {
+			it->second.ProcessRef(ref.get(), data);
+		}
+		else {
+			it->second.ClearRef(refID);
+		}
+		return EventControl::kContinue;
+	}
+
+	EventControl Manipulator::ProcessEvent(const RE::TESCellFullyLoadedEvent* a_event,
+		RE::BSTEventSource<RE::TESCellFullyLoadedEvent>*)
+	{
+		if (!a_event || !a_event->cell) {
+			return EventControl::kContinue;
+		}
+
+		auto* cell = a_event->cell;
+		auto it = _cellDataMap.find(cell->GetFormID());
+		if (it == _cellDataMap.end()) {
+			return EventControl::kContinue;
+		}
+
+		it->second.OnCellAttachDetach(cell);
+		return EventControl::kContinue;
+	}
+
+	// TODO: Hit event
+	EventControl Manipulator::ProcessEvent(const RE::TESHitEvent* a_event,
+		RE::BSTEventSource<RE::TESHitEvent>*)
+	{
+		if (!a_event) {
+			return EventControl::kContinue;
+		}
+		return EventControl::kContinue;
+	}
+
+	void Manipulator::TimeAdvanced(float delta) {
+		auto* sky = RE::Sky::GetSingleton();
+		if (!sky) {
+			return;
+		}
+
+		const bool raining = sky->IsRaining();
+		if (raining && _waitForRain) {
+			_waitForSun = false;
+			_waitForSun = false;
+			_sunny = false;
+			_rainy = true;
+
+			for (auto& [cellID, cellData] : _cellDataMap) {
+				RE::TESObjectCELL* cell = RE::TESForm::LookupByID<RE::TESObjectCELL>(cellID);
+				if (!cell || cell->cellState.none(RE::TESObjectCELL::CellState::kAttached)) {
+					continue;
+				}
+				cellData.OnCellAttachDetach(cell);
 			}
+		}
+		else if (!raining && _waitForSun) {
+			_waitForSun = false;
+			_waitForSun = false;
+			_sunny = true;
+			_rainy = false;
+		}
+	}
 
-			RE::BSScript::PackValue(relatedFlame, lit);
-			dayAttached->SetFloat(RE::Calendar::GetSingleton()->GetDaysPassed());
-			auto callback = RE::BSTSmartPointer<RE::BSScript::IStackCallbackFunctor>();
-			auto args = RE::MakeFunctionArguments();
-			const RE::BSFixedString functionName = "Extinguish";
-			auto scriptObject = script.get();
-			auto object = RE::BSTSmartPointer<RE::BSScript::Object>(scriptObject);
-			vm->DispatchMethodCall(object, functionName, args, callback);
-			errored = false;
+	enum class WeatherType
+	{
+		Rainy,
+		Sunny,
+		None
+	};
+
+	static WeatherType GetWeatherType(const REX::EnumSet<RE::TESWeather::WeatherDataFlag, uint8_t> flags) {
+		using WeatherFlag = RE::TESWeather::WeatherDataFlag;
+		if (flags.any(WeatherFlag::kRainy, WeatherFlag::kSnow)) {
+			return WeatherType::Rainy;
+		}
+		if (flags.any(WeatherFlag::kPleasant, WeatherFlag::kCloudy)) {
+			return WeatherType::Sunny;
+		}
+		return WeatherType::None;
+	}
+
+	void Manipulator::WeatherChanged(RE::TESWeather* weather) {
+		if (!weather) {
+			return; // probably not possible
+		}
+
+		const auto lastWeatherType = _lastWeather ? GetWeatherType(_lastWeather->data.flags) : WeatherType::None;
+		if (lastWeatherType == WeatherType::None) {
+			_lastWeather = weather;
+			const auto type = GetWeatherType(_lastWeather->data.flags);
+			switch (type) {
+			case WeatherType::None:
+			case WeatherType::Rainy:
+				_waitForRain = true;
+				_waitForSun = false;
+				_sunny = false;
+				_rainy = false;
+				break;
+			case WeatherType::Sunny:
+				_waitForRain = false;
+				_waitForSun = true;
+				_sunny = false;
+				_rainy = false;
+				break;
+			default: std::unreachable();
+			}
+			return;
+		}
+
+		const auto currentWeatherType = GetWeatherType(weather->data.flags);
+		switch (lastWeatherType) {
+		case WeatherType::Rainy:
+			switch (currentWeatherType) {
+			case WeatherType::Sunny:
+			case WeatherType::None:
+				_waitForRain = false;
+				_waitForSun = true;
+				_sunny = false;
+				_rainy = false;
+				break;
+			case WeatherType::Rainy:
+				break;
+			default: std::unreachable();
+			}
 			break;
+		case WeatherType::Sunny:
+			switch (currentWeatherType) {
+			case WeatherType::Rainy:
+			case WeatherType::None:
+				_waitForRain = true;
+				_waitForSun = false;
+				_sunny = false;
+				_rainy = false;
+				break;
+			case WeatherType::Sunny:
+				break;
+			default: std::unreachable();
+			}
+			break;
+		default: std::unreachable();
 		}
+	}
 
-		if (errored) {
-			_frozen.erase(placedOff->GetFormID());
-			placedOff->DeleteThis();
+	inline void Manipulator::Update(RE::PlayerCharacter* a_this, float a_delta) {
+		_update(a_this, a_delta);
+
+		static auto* manipulator = Manipulator::GetSingleton();
+		if (!manipulator) {
 			return;
 		}
+		manipulator->TimeAdvanced(a_delta);
+	}
+
+	void Manipulator::ChangeWeather(RE::TESRegion* a_region, RE::TESWeather* a_incomingWeather) {
+		_changeWeather(a_region, a_incomingWeather);
+
+		static auto* manipulator = Manipulator::GetSingleton();
+		if (!manipulator) {
+			return;
+		}
+		manipulator->WeatherChanged(a_incomingWeather);
+	}
+
+	bool Manipulator::RegisterForGameEvents() {
+		bool success = true;
+		SKSE::AllocTrampoline(14u);
+		InstallPlayerUpdateHook();
+		success &= HookWeatherChange();
+		success &= RegisterForEvents();
+		return success;
+	}
+
+	void Manipulator::FreezeReference(RE::TESObjectREFR* ref) {
+		auto* cell = ref ? ref->GetParentCell() : nullptr;
+		auto it = cell ? _cellDataMap.find(cell->GetFormID()) : _cellDataMap.end();
+		if (it == _cellDataMap.end()) {
+			return;
+		}
+		it->second.Freeze(ref->GetFormID());
+	}
+
+	void Manipulator::UnFreezeReference(RE::TESObjectREFR* ref) {
+		auto* cell = ref ? ref->GetParentCell() : nullptr;
+		auto it = cell ? _cellDataMap.find(cell->GetFormID()) : _cellDataMap.end();
+		if (it == _cellDataMap.end()) {
+			return;
+		}
+		it->second.UnFreeze(ref->GetFormID());
+	}
+
+	bool Install() {
+		logger::info("Register for events and installing hooks..."sv);
+		auto* manipulator = Manipulator::GetSingleton();
+		if (!manipulator) {
+			logger::critical("Failed to get internal fire manipulator. Aborting load..."sv);
+			return false;
+		}
+		if (!manipulator->RegisterForGameEvents()) {
+			logger::critical("Failed to install all needed listeners."sv);
+			return false;
+		}
+		logger::info("Startup completed - enjoy your game!"sv);
+		return true;
 	}
 }

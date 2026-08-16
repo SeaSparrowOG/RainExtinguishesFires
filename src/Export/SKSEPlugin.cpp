@@ -1,7 +1,6 @@
 #include "Cache/FormCache.h"
 #include "Data/ModObjectManager.h"
-#include "Events/Events.h"
-#include "Hooks/Hooks.h"
+#include "FireManipulation/Manipulator.h"
 #include "Papyrus/Papyrus.h"
 #include "Serialization/Serde.h"
 #include "Settings/INI/INISettings.h"
@@ -16,11 +15,11 @@ static void MessageEventCallback(SKSE::MessagingInterface::Message* a_msg)
 			SKSE::stl::report_and_fail("Failed to preload mod objects. Check the log for more information."sv);
 		}
 		SECTION_SEPARATOR;
-		if (!Events::InitializeListeners()) {
-			SKSE::stl::report_and_fail("Failed to initialize event listeners. Check the log for more information."sv);
+		if (!Cache::InitializeCache()) {
+			SKSE::stl::report_and_fail("Failed to initialize cache. Check the log for more information."sv);
 		}
 		SECTION_SEPARATOR;
-		if (!Cache::InitializeCache()) {
+		if (!FireManipulator::Install()) {
 			SKSE::stl::report_and_fail("Failed to initialize cache. Check the log for more information."sv);
 		}
 		SECTION_SEPARATOR;
@@ -88,10 +87,6 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a_
 
 	if (!Settings::INI::Read()) {
 		SKSE::stl::report_and_fail("Failed to load INI settings. Check the log for more information."sv);
-	}
-	SECTION_SEPARATOR;
-	if (!Hooks::Install()) {
-		SKSE::stl::report_and_fail("Failed to install hooks. Check the log for more information."sv);
 	}
 	SECTION_SEPARATOR;
 
