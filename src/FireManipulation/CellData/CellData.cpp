@@ -75,6 +75,7 @@ namespace FireManipulator::CellData
 		}
 
 		const auto& litFireMap = cache->GetLitFires();
+		const auto& unlitOverrides = cache->GetOverrides();
 		if (litFireMap.empty()) {
 			return;
 		}
@@ -88,7 +89,11 @@ namespace FireManipulator::CellData
 				}
 
 				auto* ref = RE::TESForm::LookupByID<RE::TESObjectREFR>(lit);
-				auto* base = ref ? ref->GetBaseObject() : nullptr;
+				if (!ref || ref->IsDisabled() || !ref->Is3DLoaded()) {
+					continue;
+				}
+
+				auto* base = ref->GetBaseObject();
 				auto pair = base ? litFireMap.find(base->GetFormID()) : litFireMap.end();
 				auto* unlitBase = pair != litFireMap.end() ? 
 					RE::TESForm::LookupByID<RE::TESBoundObject>(pair->second) : 
@@ -106,6 +111,11 @@ namespace FireManipulator::CellData
 				}
 				if (squashSmoke) {
 					data.smoke = FindClosestFrom(ref, smokes, smokeDistance);
+				}
+
+				auto overrides = unlitOverrides.find(pair->second);
+				if (overrides != unlitOverrides.end()) {
+					data.sizeOverride = overrides->second._sizeFactor;
 				}
 				_pendingExtinguishes.push(std::move(data));
 			}
@@ -144,11 +154,13 @@ namespace FireManipulator::CellData
 				});
 			break;
 		case ReferenceType::LitFire:
+			LOG_DEBUG("Clearing Lit Fire"sv);
 			std::erase_if(litFires, [&](const auto& e) {
 				return e == id;
 				});
 			break;
 		case ReferenceType::UnlitFire:
+			LOG_DEBUG("Clearing UnLit Fire"sv);
 			std::erase_if(unlitFires, [&](const auto& e) {
 				return e == id;
 				});
@@ -201,11 +213,12 @@ namespace FireManipulator::CellData
 
 		PendingData data;
 		data.fire = ref;
+		data.sizeOverride = refData.sizeOverride;
 		if (squashLight) {
 			data.light = FindClosestFrom(ref, lights, lightDistance);
 		}
 		if (squashSmoke) {
-			data.light = FindClosestFrom(ref, smokes, smokeDistance);
+			data.smoke = FindClosestFrom(ref, smokes, smokeDistance);
 		}
 		_pendingExtinguishes.emplace(std::move(data));
 	}
@@ -273,7 +286,12 @@ namespace FireManipulator::CellData
 			return;
 		}
 
-		placedOff->SetScale(lit->GetScale());
+		float scale = lit->GetScale();
+		if (data.sizeOverride.has_value()) {
+			scale *= data.sizeOverride.value();
+		}
+
+		placedOff->SetScale(scale);
 		placedOff->MoveTo(lit);
 		placedOff->SetAngle(lit->GetAngle());
 

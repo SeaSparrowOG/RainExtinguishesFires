@@ -92,6 +92,7 @@ namespace Cache
 		const auto& litRaw = obj["lit"];
 		const auto& unlitRaw = obj["unlit"];
 		const auto& smokeRaw = obj["smoke"];
+		const auto& overridesRaw = obj["overrides"];
 
 		if (litRaw && unlitRaw) {
 			auto parsedLit = FormFromString(litRaw.asString());
@@ -119,8 +120,16 @@ namespace Cache
 			auto litID = lit->GetFormID();
 			auto unlitID = unlit->GetFormID();
 
+			Overrides overrides;
+			if (overridesRaw && overridesRaw.isObject()) {
+				const auto& sizeOverride = overridesRaw["resize"];
+				if (sizeOverride && sizeOverride.isDouble()) {
+					overrides._sizeFactor = std::clamp(sizeOverride.asFloat(), 0.1f, 10.0f);
+				}
+			}
 			_litFires[litID] = unlitID; // Intentional overwrite.
-			_unlitFires[unlitID] = litID; // Same - just bad biderectionality.
+			_unlitFires.insert(unlitID);
+			_overrideData[unlitID] = overrides;
 			return true;
 		}
 		else if (smokeRaw) {

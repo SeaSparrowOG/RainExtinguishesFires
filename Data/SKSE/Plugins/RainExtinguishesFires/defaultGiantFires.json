@@ -1,0 +1,26 @@
+[
+        {
+            "Lit":"0x51577|Skyrim.esm",
+            "Unlit":"0x815|RainExtinguishesFires.esp"
+        }, 
+        {
+            "Lit":"0xF597F|Skyrim.esm",
+            "Unlit":"0x816|RainExtinguishesFires.esp"
+        }, 
+        {
+            "Lit":"0xF6304|Skyrim.esm",
+            "Unlit":"0x817|RainExtinguishesFires.esp"
+        }, 
+        {
+            "Lit":"0x10ACC0|Skyrim.esm",
+            "Unlit":"0x818|RainExtinguishesFires.esp"
+        }, 
+        {
+            "Lit":"0x4C5CE|Skyrim.esm",
+            "Unlit":"0x819|RainExtinguishesFires.esp"
+        }, 
+        {
+            "Lit":"0x4C5CF|Skyrim.esm",
+            "Unlit":"0x81A|RainExtinguishesFires.esp"
+        }
+]

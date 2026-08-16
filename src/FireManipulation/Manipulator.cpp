@@ -39,11 +39,13 @@ namespace FireManipulator
 		}
 
 		static const auto& litMap = cache->GetLitFires();
-		static const auto& unlitMap = cache->GetUnlitFires();
+		static const auto& overridesMap = cache->GetOverrides();
 		static const auto& smokeSet = cache->GetSmokes();
+		static const auto& unlitSet = cache->GetUnlitFires();
 		if (litMap.empty()) {
 			return data;
 		}
+
 		const auto baseID = base->GetFormID();
 		auto foundUnlitPair = litMap.find(baseID);
 		if (foundUnlitPair != litMap.end()) {
@@ -51,18 +53,20 @@ namespace FireManipulator
 			if (foundForm) {
 				data.type = Type::LitFire;
 				data.pair = skyrim_cast<RE::TESBoundObject*>(foundForm);
-				return data;
 			}
+			return data;
 		}
-		auto foundLitPair = unlitMap.find(baseID);
-		if (foundLitPair != unlitMap.end()) {
-			auto* foundForm = RE::TESForm::LookupByID(foundLitPair->second);
-			if (foundForm) {
-				data.type = Type::UnlitFire;
-				data.pair = skyrim_cast<RE::TESBoundObject*>(foundForm);
-				return data;
+
+		if (unlitSet.contains(baseID)) {
+			data.type = Type::UnlitFire;
+
+			auto foundOverride = overridesMap.find(baseID);
+			if (foundOverride != overridesMap.end()) {
+				data.sizeOverride = foundOverride->second._sizeFactor;
 			}
+			return data;
 		}
+
 		if (smokeSet.contains(baseID)) {
 			data.type = Type::Smoke;
 		}

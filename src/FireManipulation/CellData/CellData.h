@@ -13,8 +13,9 @@ namespace FireManipulator
 
 	struct ObjectData
 	{
-		ReferenceType       type = ReferenceType::None;
-		RE::TESBoundObject* pair = nullptr;
+		ReferenceType        type = ReferenceType::None;
+		RE::TESBoundObject*  pair = nullptr;
+		std::optional<float> sizeOverride = std::nullopt;
 	};
 
 	namespace CellData
@@ -43,6 +44,7 @@ namespace FireManipulator
 				RE::TESObjectREFR* light = nullptr;
 				RE::TESObjectREFR* smoke = nullptr;
 				RE::TESObjectREFR* fire = nullptr;
+				std::optional<float> sizeOverride = std::nullopt;
 			};
 
 			void               ExtinguishImpl(const PendingData& data);
@@ -50,10 +52,10 @@ namespace FireManipulator
 												const std::vector<RE::FormID>& nearby,
 												float radius);
 
-			std::vector<RE::FormID> litFires;
-			std::vector<RE::FormID> unlitFires;
 			std::vector<RE::FormID> smokes;
 			std::vector<RE::FormID> lights;
+			std::vector<RE::FormID> litFires;
+			std::vector<RE::FormID> unlitFires;
 
 			std::unordered_set<RE::FormID>                transitioningFires;
 			std::unordered_set<RE::FormID>                reservedSmokesAndLights;

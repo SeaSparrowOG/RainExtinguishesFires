@@ -5,23 +5,26 @@ namespace Cache
 	class FormCache final : public REX::Singleton<FormCache>
 	{
 	public:
-		using Stored = RE::FormID;
-		using Fires = std::unordered_map<Stored, Stored>;
-		using Smokes = std::unordered_set<Stored>;
-
 		[[nodiscard]] bool Initialize();
 
-		const Fires& GetLitFires() const { return _litFires; }
-		const Fires& GetUnlitFires() const { return _unlitFires; }
-		const Smokes& GetSmokes() const { return _smokes; }
+		struct Overrides
+		{
+			std::optional<float> _sizeFactor = std::nullopt;
+		};
+
+		const std::unordered_set<RE::FormID>&             GetSmokes() const { return _smokes; }
+		const std::unordered_set<RE::FormID>&             GetUnlitFires() const { return _unlitFires; }
+		const std::unordered_map<RE::FormID, Overrides>&  GetOverrides() const { return _overrideData; }
+		const std::unordered_map<RE::FormID, RE::FormID>& GetLitFires() const { return _litFires; }
 
 	private:
 		[[nodiscard]] bool ParseObject(const Json::Value& obj);
 		[[nodiscard]] bool ParseArray(const Json::Value& arr);
 
-		Fires _litFires;
-		Fires _unlitFires;
-		Smokes _smokes;
+		std::unordered_set<RE::FormID>             _smokes;
+		std::unordered_set<RE::FormID>             _unlitFires;
+		std::unordered_map<RE::FormID, Overrides>  _overrideData;
+		std::unordered_map<RE::FormID, RE::FormID> _litFires;
 	};
 
 	[[nodiscard]]
