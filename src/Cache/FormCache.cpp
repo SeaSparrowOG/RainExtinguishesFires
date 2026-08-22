@@ -117,19 +117,20 @@ namespace Cache
 			else if (!unlit->Is(RE::FormType::MovableStatic) && !unlit->Is(RE::FormType::Activator)) {
 				return false;
 			}
-			auto litID = lit->GetFormID();
-			auto unlitID = unlit->GetFormID();
 
-			Overrides overrides;
+			const auto litID = lit->GetFormID();
+			const auto unlitID = unlit->GetFormID();
+
+			UnlitData unlitData;
+			unlitData._offFireID = unlitID;
 			if (overridesRaw && overridesRaw.isObject()) {
 				const auto& sizeOverride = overridesRaw["resize"];
 				if (sizeOverride && sizeOverride.isDouble()) {
-					overrides._sizeFactor = std::clamp(sizeOverride.asFloat(), 0.1f, 10.0f);
+					unlitData._resizeByPercent = std::clamp(sizeOverride.asFloat(), 0.01f, 10.0f);
 				}
 			}
-			_litFires[litID] = unlitID; // Intentional overwrite.
+			_unlitData[litID] = unlitData; // Intentional overwrite.
 			_unlitFires.insert(unlitID);
-			_overrideData[unlitID] = overrides;
 			return true;
 		}
 		else if (smokeRaw) {

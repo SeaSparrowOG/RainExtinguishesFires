@@ -154,9 +154,4 @@ Event OnLoad()
         UnFreezeFire(RelatedObjects[iIndex])
     EndWhile
     /;
-
-    If (!IsRaining() && DaysPassed.GetValue() - DayAttached <= 0.0)
-
-        Relight()
-    EndIf
 EndEvent

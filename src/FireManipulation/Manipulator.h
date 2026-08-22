@@ -49,7 +49,7 @@ namespace FireManipulator
 		bool                        _sunny = false;
 		float                       _timeSinceLastQuery = 0.0f;
 		RE::TESWeather*             _lastWeather = nullptr;
-		SKSE::RegistrationSet<bool> _registeredListeners = "OnWeatherChange"sv;
+		SKSE::RegistrationSet<bool> _registeredListeners = "OnWeatherChange"sv; // unused
 
 		std::unordered_map<RE::FormID, CellData::CellData> _cellDataMap;
 	};

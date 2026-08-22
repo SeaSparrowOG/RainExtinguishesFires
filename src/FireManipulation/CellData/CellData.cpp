@@ -1,6 +1,5 @@
 #include "CellData.h"
 
-#include "Cache/FormCache.h"
 #include "FireManipulation/Manipulator.h"
 #include "Settings/INI/INISettings.h"
 
@@ -13,10 +12,10 @@ namespace FireManipulator::CellData
 		squashSmoke = Settings::INI::GetSetting<bool>(
 			Settings::INI::GENERAL_SQUASH_SMOKE.data())
 			.value_or(false);
-		lightDistance = Settings::INI::GetSetting<bool>(
+		lightDistance = Settings::INI::GetSetting<float>(
 			Settings::INI::GENERAL_LOOKUP_LIGHT.data())
 			.value_or(250.0f);
-		smokeDistance = Settings::INI::GetSetting<bool>(
+		smokeDistance = Settings::INI::GetSetting<float>(
 			Settings::INI::GENERAL_LOOKUP_SMOKE.data())
 			.value_or(250.0f);
 
@@ -74,9 +73,8 @@ namespace FireManipulator::CellData
 			return; // ???
 		}
 
-		const auto& litFireMap = cache->GetLitFires();
-		const auto& unlitOverrides = cache->GetOverrides();
-		if (litFireMap.empty()) {
+		const auto& unlitData = cache->GetUnlitData();
+		if (unlitData.empty()) {
 			return;
 		}
 
@@ -94,9 +92,9 @@ namespace FireManipulator::CellData
 				}
 
 				auto* base = ref->GetBaseObject();
-				auto pair = base ? litFireMap.find(base->GetFormID()) : litFireMap.end();
-				auto* unlitBase = pair != litFireMap.end() ? 
-					RE::TESForm::LookupByID<RE::TESBoundObject>(pair->second) : 
+				auto pair = base ? unlitData.find(base->GetFormID()) : unlitData.end();
+				auto* unlitBase = pair != unlitData.end() ?
+					RE::TESForm::LookupByID<RE::TESBoundObject>(pair->second._offFireID) : 
 					nullptr;
 				if (!unlitBase) {
 					continue;
@@ -106,16 +104,14 @@ namespace FireManipulator::CellData
 				PendingData data;
 				data.fire = ref;
 				data.unlit = unlitBase;
+				data.sizeOverride = pair->second._resizeByPercent;
+				data.overrideOcclusion = pair->second._forceOcclusionCheck;
+
 				if (squashLight) {
 					data.light = FindClosestFrom(ref, lights, lightDistance);
 				}
 				if (squashSmoke) {
 					data.smoke = FindClosestFrom(ref, smokes, smokeDistance);
-				}
-
-				auto overrides = unlitOverrides.find(pair->second);
-				if (overrides != unlitOverrides.end()) {
-					data.sizeOverride = overrides->second._sizeFactor;
 				}
 				_pendingExtinguishes.push(std::move(data));
 			}
@@ -199,10 +195,15 @@ namespace FireManipulator::CellData
 			return;
 		}
 
+		auto* tasks = SKSE::GetTaskInterface();
+		if (!tasks) {
+			return; // what
+		}
+
 		auto* ref = RE::TESForm::LookupByID<RE::TESObjectREFR>(id);
 		auto* base = ref ? ref->GetBaseObject() : nullptr;
 		auto refData = GetObjectData(base);
-		if (refData.type != ReferenceType::LitFire) {
+		if (refData.type != ReferenceType::LitFire || !refData.data.has_value()) {
 			return;
 		}
 
@@ -211,16 +212,31 @@ namespace FireManipulator::CellData
 			return;
 		}
 
+		const auto& refDataValue = refData.data.value();
+		auto* offForm = RE::TESForm::LookupByID<RE::TESBoundObject>(refDataValue._offFireID);
+		if (!offForm) {
+			return;
+		}
+		transitioningFires.insert(id);
+
 		PendingData data;
 		data.fire = ref;
-		data.sizeOverride = refData.sizeOverride;
+		data.overrideOcclusion = refDataValue._forceOcclusionCheck;
+		data.sizeOverride = refDataValue._resizeByPercent;
+		data.unlit = offForm;
+
 		if (squashLight) {
 			data.light = FindClosestFrom(ref, lights, lightDistance);
 		}
 		if (squashSmoke) {
 			data.smoke = FindClosestFrom(ref, smokes, smokeDistance);
 		}
+
 		_pendingExtinguishes.emplace(std::move(data));
+		if (!_pendingExtinguishes.empty() && !_queued) {
+			_queued = true;
+			tasks->AddTask(reinterpret_cast<::TaskDelegate*>(this));
+		}
 	}
 
 	void CellData::UnFreeze(const RE::FormID id) {

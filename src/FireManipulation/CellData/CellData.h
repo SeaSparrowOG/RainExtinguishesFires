@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Cache/FormCache.h"
+
 namespace FireManipulator
 {
 	enum class ReferenceType
@@ -13,9 +15,8 @@ namespace FireManipulator
 
 	struct ObjectData
 	{
-		ReferenceType        type = ReferenceType::None;
-		RE::TESBoundObject*  pair = nullptr;
-		std::optional<float> sizeOverride = std::nullopt;
+		ReferenceType                   type = ReferenceType::None;
+		std::optional<Cache::UnlitData> data = std::nullopt;
 	};
 
 	namespace CellData
@@ -44,6 +45,8 @@ namespace FireManipulator
 				RE::TESObjectREFR* light = nullptr;
 				RE::TESObjectREFR* smoke = nullptr;
 				RE::TESObjectREFR* fire = nullptr;
+
+				std::optional<bool>  overrideOcclusion = std::nullopt;
 				std::optional<float> sizeOverride = std::nullopt;
 			};
 

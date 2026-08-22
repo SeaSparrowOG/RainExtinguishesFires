@@ -6,6 +6,43 @@
 
 namespace
 {
+	static bool IsRaining()
+	{
+		const auto* sky = RE::Sky::GetSingleton();
+		if (!sky) {
+			return false;
+		}
+
+		const auto* current = sky->currentWeather;
+		if (!current) {
+			return false;
+		}
+
+		const auto* last = sky->lastWeather;
+		const auto& data = current->data;
+		const auto* lastData = last ? &last->data : nullptr;
+		if (data.flags.any(RE::TESWeather::WeatherDataFlag::kRainy, RE::TESWeather::WeatherDataFlag::kSnow)) {
+			if (!lastData) {
+				return true;
+			}
+
+			if (lastData->flags.any(RE::TESWeather::WeatherDataFlag::kRainy, RE::TESWeather::WeatherDataFlag::kSnow)) {
+				return true;
+			}
+
+			const float fadeInPct = 1.0f + static_cast<float>(current->data.precipitationBeginFadeIn) / 255.0f;
+			return fadeInPct <= sky->currentWeatherPct;
+		}
+		else if (lastData && lastData->flags.any(RE::TESWeather::WeatherDataFlag::kRainy, RE::TESWeather::WeatherDataFlag::kSnow)) {
+			const float fadeOutPct = static_cast<float>(current->data.precipitationEndFadeOut) / 255.0f;
+			return fadeOutPct > sky->currentWeatherPct;
+		}
+		return false;
+	}
+}
+
+namespace
+{
 	static bool CanExtinguishFire(RE::TESObjectREFR* fire) {
 		auto& xLists = fire->extraList;
 		for (const auto& xList : xLists) {
@@ -38,32 +75,23 @@ namespace FireManipulator
 			return data;
 		}
 
-		static const auto& litMap = cache->GetLitFires();
-		static const auto& overridesMap = cache->GetOverrides();
+		static const auto& unlitMap = cache->GetUnlitData();
 		static const auto& smokeSet = cache->GetSmokes();
 		static const auto& unlitSet = cache->GetUnlitFires();
-		if (litMap.empty()) {
+		if (unlitMap.empty()) {
 			return data;
 		}
-
 		const auto baseID = base->GetFormID();
-		auto foundUnlitPair = litMap.find(baseID);
-		if (foundUnlitPair != litMap.end()) {
-			auto* foundForm = RE::TESForm::LookupByID(foundUnlitPair->second);
-			if (foundForm) {
-				data.type = Type::LitFire;
-				data.pair = skyrim_cast<RE::TESBoundObject*>(foundForm);
-			}
+
+		auto foundUnlitData = unlitMap.find(baseID);
+		if (foundUnlitData != unlitMap.end()) {
+			data.type = Type::LitFire;
+			data.data = foundUnlitData->second;
 			return data;
 		}
 
 		if (unlitSet.contains(baseID)) {
 			data.type = Type::UnlitFire;
-
-			auto foundOverride = overridesMap.find(baseID);
-			if (foundOverride != overridesMap.end()) {
-				data.sizeOverride = foundOverride->second._sizeFactor;
-			}
 			return data;
 		}
 
@@ -194,21 +222,101 @@ namespace FireManipulator
 	EventControl Manipulator::ProcessEvent(const RE::TESHitEvent* a_event,
 		RE::BSTEventSource<RE::TESHitEvent>*)
 	{
-		if (!a_event) {
+		if (!a_event || !a_event->target) {
 			return EventControl::kContinue;
 		}
+
+		const auto* targetCell = a_event->target->GetParentCell();
+		if (!targetCell || targetCell->cellState.none(RE::TESObjectCELL::CellState::kAttached)) {
+			return EventControl::kContinue;
+		}
+
+		const auto cellID = targetCell->GetFormID();
+		const auto targetCellData = _cellDataMap.find(cellID);
+		if (targetCellData == _cellDataMap.end()) {
+			return EventControl::kContinue;
+		}
+
+		const auto source = a_event->source;
+		const auto* form = RE::TESForm::LookupByID(source);
+		const auto type = form ? form->GetFormType() : RE::FormType::None;
+		RE::BSTArray<RE::Effect*> effects;
+
+		if (type == RE::TESObjectWEAP::FORMTYPE) {
+			const auto* weap = form->As<RE::TESObjectWEAP>();
+			assert(weap);
+			const auto* ench = weap->formEnchanting;
+			if (!ench) {
+				return EventControl::kContinue;
+			}
+			effects = ench->effects;
+		}
+		else if (type == RE::SpellItem::FORMTYPE) {
+			const auto* spell = form->As<RE::SpellItem>();
+			assert(spell);
+			effects = spell->effects;
+		}
+
+		if (effects.empty()) {
+			return EventControl::kContinue;
+		}
+
+		const auto* fireKeyword = RE::TESForm::LookupByID<RE::BGSKeyword>(0x1CEAD);
+		const auto* frostKeyword = RE::TESForm::LookupByID<RE::BGSKeyword>(0x1CEAE);
+		assert(fireKeyword && frostKeyword);
+		if (!fireKeyword || !frostKeyword) {
+			return EventControl::kContinue;
+		}
+
+		bool isFire = false;
+		bool isFrost = false;
+		for (const auto* effect : effects) {
+			const auto* base = effect ? effect->baseEffect : nullptr;
+			if (!base) {
+				continue;
+			}
+
+			isFire |= base->HasKeyword(fireKeyword);
+			isFrost |= base->HasKeyword(frostKeyword);
+			if (isFire && isFrost) {
+				return EventControl::kContinue;
+			}
+		}
+
+		if (isFire) {
+			targetCellData->second.ExtinguishRef(a_event->target->GetFormID());
+		}
+		else if (isFrost) {
+			targetCellData->second.ExtinguishRef(a_event->target->GetFormID());
+		}
+
 		return EventControl::kContinue;
 	}
 
 	void Manipulator::TimeAdvanced(float delta) {
+		if (delta <= 0.0f) {
+			return;
+		}
+		_timeSinceLastQuery += delta;
+		if (_timeSinceLastQuery < 1.0f) {
+			return;
+		}
+		_timeSinceLastQuery = 0.0f;
+
 		auto* sky = RE::Sky::GetSingleton();
 		if (!sky) {
 			return;
 		}
 
-		const bool raining = sky->IsRaining();
+		// Important: In 1.6.1170, Commonlib has a bug that makes it so that
+		// IsRaining() and IsSnowing() always return true if the incoming weather
+		// is rainy or snowy respectively. I made a PR, and it will be fixed...
+		// but until the 1.7.99 update settles, a local helper will be used.
+		// const bool raining = sky->IsRaining() || sky->IsSnowing();
+
+		const bool raining = IsRaining();
 		if (raining && _waitForRain) {
-			_waitForSun = false;
+			_waitForRain = false;
 			_waitForSun = false;
 			_sunny = false;
 			_rainy = true;
@@ -223,7 +331,7 @@ namespace FireManipulator
 		}
 		else if (!raining && _waitForSun) {
 			_waitForSun = false;
-			_waitForSun = false;
+			_waitForRain = false;
 			_sunny = true;
 			_rainy = false;
 		}
@@ -307,6 +415,7 @@ namespace FireManipulator
 			break;
 		default: std::unreachable();
 		}
+		_lastWeather = weather;
 	}
 
 	inline void Manipulator::Update(RE::PlayerCharacter* a_this, float a_delta) {
