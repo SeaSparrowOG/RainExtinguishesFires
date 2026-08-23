@@ -17,7 +17,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: recursive
 
@@ -29,7 +29,7 @@ jobs:
         ./vcpkg --version > ${{ github.workspace }}/vcpkg-version.txt
 
     - name: Cache vcpkg
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       id: vcpkg-cache
       env:
         cache-name: vcpkg-cache
@@ -51,7 +51,7 @@ jobs:
         cmake --install ${{ github.workspace }}/build --component "SKSEPlugin" --config ${{ env.BUILD_TYPE }} --prefix ${{ github.workspace }}/ReleaseBuild
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: ${{ github.event.repository.name }}
         path: ${{ github.workspace }}/ReleaseBuild

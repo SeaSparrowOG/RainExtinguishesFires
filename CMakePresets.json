@@ -59,7 +59,7 @@
         "cmake-dev",
         "vcpkg",
         "windows",
-        "vs2022",
+        "vs",
         "release"
       ],
       "cacheVariables": {
