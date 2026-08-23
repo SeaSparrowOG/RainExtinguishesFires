@@ -1,7 +1,9 @@
-[submodule "Extern/CommonLibNG"]
-	path = Extern/CommonLibNG
-	url = https://github.com/alandtse/CommonLibVR
-	branch = ng
-[submodule "Extern/CommonLibSSE"]
-	path = Extern/CommonLibSSE
-	url = https://github.com/powerof3/CommonLibSSE
+[submodule "External/CommonLibSSE"]
+	path = External/CommonLibSSE
+	url = https://github.com/SeaSparrowOG/CommonLibSSE
+[submodule "Tools/SKSE-CMakeModules"]
+	path = Tools/SKSE-CMakeModules
+	url = https://github.com/Exit-9B/SKSE-CMakeModules.git
+[submodule "Tools/Bethesda-CMakeModules"]
+	path = Tools/Bethesda-CMakeModules
+	url = https://github.com/Exit-9B/BethesdaCMakeModules.git

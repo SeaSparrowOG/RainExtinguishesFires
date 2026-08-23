@@ -1,0 +1,51 @@
+[
+  {
+    "Source": "0xCD824|Skyrim.esm",
+    "Off": "0x81B|RainExtinguishesFires.esp",
+    "Overrides": {
+      "resize": 0.9
+    }
+  },
+  {
+    "Source": "0xCD823|Skyrim.esm",
+    "Off": "0x81B|RainExtinguishesFires.esp",
+    "Overrides": {
+      "resize": 0.9
+    }
+  },
+  {
+    "Source": "0xAA71C|Skyrim.esm",
+    "Off": "0x81B|RainExtinguishesFires.esp",
+    "Overrides": {
+      "resize": 0.9
+    }
+  },
+  {
+    "Source": "0x33DA4|Skyrim.esm",
+    "Off": "0x81B|RainExtinguishesFires.esp",
+    "Overrides": {
+      "resize": 0.9
+    }
+  },
+  {
+    "Source": "0x1092E2|Skyrim.esm",
+    "Off": "0x81B|RainExtinguishesFires.esp",
+    "Overrides": {
+      "resize": 0.9
+    }
+  },
+  {
+    "Source": "0x33DA9|Skyrim.esm",
+    "Off": "0x81B|RainExtinguishesFires.esp",
+    "Overrides": {
+      "resize": 0.9
+    }
+  },
+  {
+    "Source": "0x4318B|Skyrim.esm",
+    "Off": "0x81B|RainExtinguishesFires.esp",
+    "Overrides": {
+      "resize": 0.9
+    }
+  }
+]
