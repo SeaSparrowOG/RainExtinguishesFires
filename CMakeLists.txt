@@ -205,3 +205,42 @@ if(DEFINED OUTPUT_FOLDER)
 else()
 	message(STATUS "Output folder environment variable not set, build files will not be automatically deployed to MO2.")
 endif()
+
+install(
+	FILES
+		"${DATA_DIR}/RainExtinguishesFires.esp"
+		"${DATA_DIR}/RainExtinguishesFires.bsa"
+	DESTINATION "."
+	COMPONENT components
+)
+
+install(
+	FILES
+		"${DATA_DIR}/Source/Scripts/REF_FurnitureScript.psc"
+		"${DATA_DIR}/Source/Scripts/REF_ObjectRefOffController.psc"
+		"${DATA_DIR}/Source/Scripts/REF_QuestEventHandler.psc"
+		"${DATA_DIR}/Source/Scripts/REF_RefAliasLoadManager.psc"
+		"${DATA_DIR}/Source/Scripts/REF_UtilityFunctions.psc"
+	DESTINATION "Source/Scripts"
+	COMPONENT components
+)
+
+install(
+	FILES
+		"${DATA_DIR}/SKSE/Plugins/RainExtinguishesFires/defaultEmbers.json"
+		"${DATA_DIR}/SKSE/Plugins/RainExtinguishesFires/defaultFires.json"
+		"${DATA_DIR}/SKSE/Plugins/RainExtinguishesFires/defaultGiantFires.json"
+		"${DATA_DIR}/SKSE/Plugins/RainExtinguishesFires/defaultSmokes.json"
+		"${DATA_DIR}/SKSE/Plugins/RainExtinguishesFires/embersXDCampfires.json"
+		"${DATA_DIR}/SKSE/Plugins/RainExtinguishesFires/embersXDEmbers.json"
+		"${DATA_DIR}/SKSE/Plugins/RainExtinguishesFires/embersXDGiantCampfires.json"
+	DESTINATION "SKSE/Plugins/RainExtinguishesFires"
+	COMPONENT components
+)
+
+install(
+	FILES
+		"${DATA_DIR}/SKSE/Plugins/RainExtinguishesFires.ini"
+	DESTINATION "SKSE/Plugins"
+	COMPONENT components
+)
