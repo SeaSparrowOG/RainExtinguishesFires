@@ -85,7 +85,37 @@ namespace Cache
 			}
 		}
 
-		return success;
+		return FindDynDOLODPairs();
+	}
+
+	bool FormCache::FindDynDOLODPairs() {
+		auto* dh = RE::TESDataHandler::GetSingleton();
+		auto* tweaks = REX::W32::GetModuleHandleW(L"po3_tweaks.dll");
+		if (!tweaks || !dh || !dh->LookupModByName("DynDOLOD.esm"sv)) {
+			return true;
+		}
+
+		std::vector<std::pair<RE::FormID, UnlitData>> dyndolodFires;
+		dyndolodFires.reserve(24);
+		for (const auto& [id, data] : _unlitData) {
+			auto* base = RE::TESForm::LookupByID<RE::TESObjectREFR>(id);
+			if (!base || !data._offFireID) {
+				continue;
+			}
+
+			const std::string_view baseEDID = fmt::format("{}_DynDOLOD_BASE"sv, clib_util::editorID::get_editorID(base));
+			auto* foundBase = RE::TESForm::LookupByEditorID<RE::TESBoundObject>(baseEDID);
+			if (!foundBase) {
+				continue;
+			}
+			UnlitData newData = data;
+			dyndolodFires.push_back({ foundBase->GetFormID(), newData });
+		}
+
+		for (const auto& [id, data] : dyndolodFires) {
+			_unlitData[id] = data;
+		}
+		return true;
 	}
 
 	bool FormCache::ParseObject(const Json::Value& obj) {

@@ -8,15 +8,38 @@ namespace Papyrus
 		return { Plugin::VERSION[0], Plugin::VERSION[1], Plugin::VERSION[2] };
 	}
 
-	static bool IsRaining(STATIC_ARGS) {
-		auto* sky = RE::Sky::GetSingleton();
+	static bool IsRaining(STATIC_ARGS)
+	{
+		const auto* sky = RE::Sky::GetSingleton();
 		if (!sky) {
-			a_vm->TraceStack("[IsRaining]: Failed to get the game's Sky singleton.", 
-				a_stackID, 
-				RE::BSScript::IVirtualMachine::Severity::kWarning);
 			return false;
 		}
-		return sky->IsRaining() || sky->IsSnowing();
+
+		const auto* current = sky->currentWeather;
+		if (!current) {
+			return false;
+		}
+
+		const auto* last = sky->lastWeather;
+		const auto& data = current->data;
+		const auto* lastData = last ? &last->data : nullptr;
+		if (data.flags.any(RE::TESWeather::WeatherDataFlag::kRainy, RE::TESWeather::WeatherDataFlag::kSnow)) {
+			if (!lastData) {
+				return true;
+			}
+
+			if (lastData->flags.any(RE::TESWeather::WeatherDataFlag::kRainy, RE::TESWeather::WeatherDataFlag::kSnow)) {
+				return true;
+			}
+
+			const float fadeInPct = 1.0f + static_cast<float>(current->data.precipitationBeginFadeIn) / 255.0f;
+			return fadeInPct <= sky->currentWeatherPct;
+		}
+		else if (lastData && lastData->flags.any(RE::TESWeather::WeatherDataFlag::kRainy, RE::TESWeather::WeatherDataFlag::kSnow)) {
+			const float fadeOutPct = static_cast<float>(current->data.precipitationEndFadeOut) / 255.0f;
+			return fadeOutPct > sky->currentWeatherPct;
+		}
+		return false;
 	}
 
 	static void UnFreezeFire(STATIC_ARGS, RE::TESObjectREFR* ref) {

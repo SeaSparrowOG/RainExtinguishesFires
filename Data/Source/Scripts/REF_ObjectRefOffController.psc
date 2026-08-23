@@ -14,6 +14,26 @@ Furniture Property REF_FRN_RelightFurniture Auto
 
 Import REF_UtilityFunctions
 
+Bool Locked = False
+
+Bool Function AcquireLock()
+
+    Int iAttempt = 0
+    While (Locked && iAttempt < 10)
+
+        Utility.Wait(0.3)
+        iAttempt += 1
+    EndWhile
+
+    If (iAttempt >= 10)
+
+        Return False
+    EndIf
+
+    Locked = True
+    Return True
+EndFunction
+
 Function FreeReferences()
 
     UnFreezeFire(RelatedFlame)
@@ -24,6 +44,14 @@ EndFunction
 
 Function CleanUp()
 
+    Int iAttempt = 0
+    While (iAttempt < 5 && !AcquireLock())
+
+        iAttempt += 1
+        Utility.Wait(0.3)
+    EndWhile
+
+    RelatedFlame.Enable(True)
     Int iIndex = RelatedObjects.Length
     While IIndex > 0
         iIndex -= 1
@@ -31,16 +59,17 @@ Function CleanUp()
         UnFreezeFire(RelatedObjects[iIndex])
     EndWhile
     
-    RelatedLight.EnableNoWait(False)
-    RelatedSmoke.EnableNoWait(False)
+    RelatedLight.Enable(False)
+    RelatedSmoke.Enable(False)
     
     FreeReferences()
 
     RelatedFlame = NONE
     RelatedObjects = NONE
 
-    Self.Disable()
+    Self.DisableNoWait()
     Self.Delete()
+    Locked = False
 EndFunction
 
 ;/
@@ -69,6 +98,12 @@ Function Extinguish()
         EndIf
     EndIf
 
+    If (!AcquireLock())
+
+        Cleanup()
+        Return
+    EndIf
+
     ;RelatedObjects = GetNearbyAssociatedReferences(RelatedFlame)
     ;Utility.Wait(0.25)
     RelatedFlame.Disable(True)
@@ -81,11 +116,18 @@ Function Extinguish()
     ;EndWhile
 
     RelatedSmoke.DisableNoWait(True)
-    RelatedLight.Disable(False)
+    RelatedLight.DisableNoWait(False)
     FreeReferences()
+    Locked = False
 EndFunction
 
 Function Relight()
+
+    If (!AcquireLock())
+
+        Cleanup()
+        Return
+    EndIf
 
     FreezeFire(RelatedFlame)
     ;Int iIndex = RelatedObjects.Length
@@ -97,10 +139,11 @@ Function Relight()
 
     RelatedFlame.Enable(True)
     Utility.Wait(1.25)
-    RelatedSmoke.EnableNoWait(True)
-    RelatedLight.EnableNoWait(False)
+    RelatedSmoke.Enable(True)
+    RelatedLight.Enable(False)
     Self.Disable()
-
+    
+    Locked = False
     If (IsRaining())
 
         RegisterForSingleUpdate(10.0)

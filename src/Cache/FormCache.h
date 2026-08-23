@@ -19,6 +19,7 @@ namespace Cache
 		const std::unordered_map<RE::FormID, UnlitData>&  GetUnlitData() const { return _unlitData; }
 
 	private:
+		[[nodiscard]] bool FindDynDOLODPairs();
 		[[nodiscard]] bool ParseObject(const Json::Value& obj);
 		[[nodiscard]] bool ParseArray(const Json::Value& arr);
 

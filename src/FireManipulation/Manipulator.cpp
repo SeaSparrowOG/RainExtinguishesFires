@@ -41,23 +41,6 @@ namespace
 	}
 }
 
-namespace
-{
-	static bool CanExtinguishFire(RE::TESObjectREFR* fire) {
-		auto& xLists = fire->extraList;
-		for (const auto& xList : xLists) {
-			switch (xList.GetType()) {
-			case RE::ExtraDataType::kEnableStateChildren:
-			case RE::ExtraDataType::kEnableStateParent:
-				return false;
-			default:
-				break;
-			}
-		}
-		return true;
-	}
-}
-
 namespace FireManipulator
 {
 	ObjectData GetObjectData(RE::TESBoundObject* base) {
@@ -155,7 +138,19 @@ namespace FireManipulator
 		}
 
 		auto* cell = RE::TESForm::LookupByID<RE::TESObjectCELL>(a_event->cellID);
-		
+		if (!cell || 
+			!cell->cellState.all(RE::TESObjectCELL::CellState::kAttached) || 
+			cell->IsInteriorCell()) 
+		{
+			return EventControl::kContinue;
+		}
+
+		auto it = _cellDataMap.find(a_event->cellID);
+		if (it == _cellDataMap.end()) {
+			return EventControl::kContinue;
+		}
+
+		it->second.OnCellAttachDetach(cell);
 		return EventControl::kContinue;
 	}
 
@@ -168,9 +163,6 @@ namespace FireManipulator
 
 		auto& ref = a_event->reference;
 		const auto refID = ref->GetFormID();
-		if ((refID & 0xFF000000) == 0xFF000000) {
-			return EventControl::kContinue;
-		}
 
 		auto* base = ref->GetBaseObject();
 		auto* cell = ref->GetParentCell();
@@ -179,7 +171,11 @@ namespace FireManipulator
 		}
 
 		auto data = GetObjectData(base);
+
 		if (data.type == ReferenceType::None) {
+			return EventControl::kContinue;
+		}
+		else if (data.type != ReferenceType::UnlitFire && (refID & 0xFF000000) == 0xFF000000) {
 			return EventControl::kContinue;
 		}
 
@@ -218,11 +214,20 @@ namespace FireManipulator
 		return EventControl::kContinue;
 	}
 
-	// TODO: Hit event
 	EventControl Manipulator::ProcessEvent(const RE::TESHitEvent* a_event,
 		RE::BSTEventSource<RE::TESHitEvent>*)
 	{
 		if (!a_event || !a_event->target) {
+			return EventControl::kContinue;
+		}
+
+		auto* targetBase = a_event->target->GetBaseObject();
+		auto baseType = GetObjectData(targetBase);
+		switch (baseType.type) {
+		case ReferenceType::LitFire:
+		case ReferenceType::UnlitFire:
+			break;
+		default:
 			return EventControl::kContinue;
 		}
 
@@ -283,10 +288,10 @@ namespace FireManipulator
 			}
 		}
 
-		if (isFire) {
-			targetCellData->second.ExtinguishRef(a_event->target->GetFormID());
+		if (isFire && baseType.type == ReferenceType::UnlitFire) {
+			targetCellData->second.RelightRef(a_event->target->GetFormID());
 		}
-		else if (isFrost) {
+		else if (isFrost && baseType.type == ReferenceType::LitFire) {
 			targetCellData->second.ExtinguishRef(a_event->target->GetFormID());
 		}
 

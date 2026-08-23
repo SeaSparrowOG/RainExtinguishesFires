@@ -3,14 +3,104 @@
 #include "FireManipulation/Manipulator.h"
 #include "Settings/INI/INISettings.h"
 
+namespace
+{
+	// TODO:
+	// This shouldn't be here. Until clib updates, I have to
+	// rely on this.
+	static bool IsRaining()
+	{
+		const auto* sky = RE::Sky::GetSingleton();
+		if (!sky) {
+			return false;
+		}
+
+		const auto* current = sky->currentWeather;
+		if (!current) {
+			return false;
+		}
+
+		const auto* last = sky->lastWeather;
+		const auto& data = current->data;
+		const auto* lastData = last ? &last->data : nullptr;
+		if (data.flags.any(RE::TESWeather::WeatherDataFlag::kRainy, RE::TESWeather::WeatherDataFlag::kSnow)) {
+			if (!lastData) {
+				return true;
+			}
+
+			if (lastData->flags.any(RE::TESWeather::WeatherDataFlag::kRainy, RE::TESWeather::WeatherDataFlag::kSnow)) {
+				return true;
+			}
+
+			const float fadeInPct = 1.0f + static_cast<float>(current->data.precipitationBeginFadeIn) / 255.0f;
+			return fadeInPct <= sky->currentWeatherPct;
+		}
+		else if (lastData && lastData->flags.any(RE::TESWeather::WeatherDataFlag::kRainy, RE::TESWeather::WeatherDataFlag::kSnow)) {
+			const float fadeOutPct = static_cast<float>(current->data.precipitationEndFadeOut) / 255.0f;
+			return fadeOutPct > sky->currentWeatherPct;
+		}
+		return false;
+	}
+
+	static bool IsOccluded(RE::TESObjectREFR* caster) {
+		auto* player = RE::PlayerCharacter::GetSingleton();
+		auto* parentCell = caster ? caster->GetParentCell() : nullptr;
+		auto* bhkWorld = parentCell ? parentCell->GetbhkWorld() : nullptr;
+		if (!bhkWorld || !player) {
+			return false;
+		}
+
+		auto boundData = caster->GetBaseObject()->boundData;
+		auto havokWorldScale = RE::bhkWorld::GetWorldScale();
+		RE::bhkPickData pick_data;
+		RE::NiPoint3 ray_start, ray_end;
+
+		ray_start = caster->data.location;
+		ray_start.z += 100.0f + boundData.boundMax.z;
+		ray_end = ray_start;
+		ray_end.z += 50000.0f;
+
+		pick_data.rayInput.from = ray_start * havokWorldScale;
+		pick_data.rayInput.to = ray_end * havokWorldScale;
+
+		auto filter = RE::CFilter();
+		player->GetCollisionFilterInfo(filter);
+		filter.SetCollisionLayer(RE::COL_LAYER::kCharController);
+		pick_data.rayInput.filterInfo = filter;
+
+		bhkWorld->PickObject(pick_data);
+		return pick_data.rayOutput.HasHit();
+	}
+
+	static bool CanExtinguishFire(RE::TESObjectREFR* fire, bool checkOcclusion) {
+		const auto formID = fire->GetFormID();
+		if ((formID & 0xFF000000) == 0xFF000000) {
+			return false;
+		}
+
+		auto& xList = fire->extraList;
+		if (xList.HasType(RE::ExtraDataType::kEnableStateParent)) {
+			return false;
+		}
+		if (xList.HasType(RE::ExtraDataType::kEnableStateChildren)) {
+			return false;
+		}
+		
+		return !checkOcclusion || IsOccluded(fire);
+	}
+}
+
 namespace FireManipulator::CellData
 {
 	CellData::CellData() {
 		squashLight = Settings::INI::GetSetting<bool>(
 			Settings::INI::GENERAL_SQUASH_LIGHTS.data())
-			.value_or(false);
+			.value_or(true);
 		squashSmoke = Settings::INI::GetSetting<bool>(
 			Settings::INI::GENERAL_SQUASH_SMOKE.data())
+			.value_or(true);
+		checkOcclusion = Settings::INI::GetSetting<bool>(
+			Settings::INI::GENERAL_CHECK_OCCLUSION.data())
 			.value_or(false);
 		lightDistance = Settings::INI::GetSetting<float>(
 			Settings::INI::GENERAL_LOOKUP_LIGHT.data())
@@ -18,6 +108,9 @@ namespace FireManipulator::CellData
 		smokeDistance = Settings::INI::GetSetting<float>(
 			Settings::INI::GENERAL_LOOKUP_SMOKE.data())
 			.value_or(250.0f);
+		resetDays = Settings::INI::GetSetting<float>(
+			Settings::INI::GENERAL_RESET_DAYS.data())
+			.value_or(2.0f);
 
 		litFires.reserve(12);
 		unlitFires.reserve(12);
@@ -78,7 +171,7 @@ namespace FireManipulator::CellData
 			return;
 		}
 
-		const bool raining = sky->IsRaining();
+		const bool raining = IsRaining();
 		if (raining && !litFires.empty()) {
 
 			for (const auto& lit : litFires) {
@@ -99,6 +192,13 @@ namespace FireManipulator::CellData
 				if (!unlitBase) {
 					continue;
 				}
+
+				const bool refNeedsOcclusionCheck = checkOcclusion || 
+					pair->second._forceOcclusionCheck.value_or(false);
+				if (!CanExtinguishFire(ref, refNeedsOcclusionCheck)) {
+					continue;
+				}
+
 				transitioningFires.insert(lit);
 
 				PendingData data;
@@ -122,12 +222,49 @@ namespace FireManipulator::CellData
 			}
 		}
 		else if (!unlitFires.empty() && !raining) {
+			const float currentDay = RE::Calendar::GetSingleton()->GetDay();
 			for (const auto& unlit : unlitFires) {
 				auto* ref = RE::TESForm::LookupByID<RE::TESObjectREFR>(unlit);
-				auto* base = ref ? ref->GetBaseObject() : nullptr;
-				if (!base) {
+				if (!ref) {
 					continue;
 				}
+
+				auto* vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
+				auto* handlePolicy = vm ? vm->GetObjectHandlePolicy() : nullptr;
+				if (!handlePolicy) {
+					return;
+				}
+
+				RE::VMHandle handle = handlePolicy->GetHandleForObject(RE::TESObjectREFR::FORMTYPE, ref);
+				auto found = vm->attachedScripts.find(handle);
+				if (found == vm->attachedScripts.end()) {
+					continue;
+				}
+
+				for (auto& script : found->second) {
+					auto* info = script ? script->GetTypeInfo() : nullptr;
+					if (!info || info->GetName() != "REF_ObjectRefOffController"sv) {
+						continue;
+					}
+
+					auto* dayAttachedProperty = script->GetProperty("DayAttached");
+					const float dayAttached = dayAttachedProperty ?
+						dayAttachedProperty->GetFloat() :
+						0.0f;
+					const float timeElapsed = currentDay - dayAttached;
+
+					if (timeElapsed > resetDays || dayAttached > currentDay + 1.0f) {
+						PendingData data;
+						data.fire = ref;
+						data.type = ActionType::Relight;
+						_pendingExtinguishes.push(std::move(data));
+					}
+				}
+			}
+
+			if (!_pendingExtinguishes.empty() && !_queued) {
+				_queued = true;
+				tasks->AddTask(reinterpret_cast<::TaskDelegate*>(this));
 			}
 		}
 	}
@@ -140,23 +277,10 @@ namespace FireManipulator::CellData
 
 		switch (it->second) {
 		case ReferenceType::Light:
-			std::erase_if(lights, [&](const auto& e) {
-				return e == id;
-				});
-			break;
 		case ReferenceType::Smoke:
-			std::erase_if(smokes, [&](const auto& e) {
-				return e == id;
-				});
-			break;
 		case ReferenceType::LitFire:
-			LOG_DEBUG("Clearing Lit Fire"sv);
-			std::erase_if(litFires, [&](const auto& e) {
-				return e == id;
-				});
 			break;
 		case ReferenceType::UnlitFire:
-			LOG_DEBUG("Clearing UnLit Fire"sv);
 			std::erase_if(unlitFires, [&](const auto& e) {
 				return e == id;
 				});
@@ -239,6 +363,38 @@ namespace FireManipulator::CellData
 		}
 	}
 
+	void CellData::RelightRef(const RE::FormID id) {
+		if (transitioningFires.contains(id)) {
+			return;
+		}
+		auto* tasks = SKSE::GetTaskInterface();
+		if (!tasks) {
+			return; // what
+		}
+
+		auto* ref = RE::TESForm::LookupByID<RE::TESObjectREFR>(id);
+		auto* base = ref ? ref->GetBaseObject() : nullptr;
+		auto refData = GetObjectData(base);
+		if (refData.type != ReferenceType::UnlitFire) {
+			return;
+		}
+
+		auto* parent = ref->GetParentCell();
+		if (!parent || parent->cellState.none(RE::TESObjectCELL::CellState::kAttached)) {
+			return;
+		}
+		transitioningFires.insert(id);
+
+		PendingData data;
+		data.fire = ref;
+		data.type = ActionType::Relight;
+		_pendingExtinguishes.emplace(std::move(data));
+		if (!_pendingExtinguishes.empty() && !_queued) {
+			_queued = true;
+			tasks->AddTask(reinterpret_cast<::TaskDelegate*>(this));
+		}
+	}
+
 	void CellData::UnFreeze(const RE::FormID id) {
 		auto it = transitioningFires.find(id);
 		if (it != transitioningFires.end()) {
@@ -273,7 +429,15 @@ namespace FireManipulator::CellData
 	void CellData::Run() {
 		while (!_pendingExtinguishes.empty()) {
 			const auto& back = _pendingExtinguishes.top();
-			ExtinguishImpl(back);
+			switch (back.type) {
+			case ActionType::Extinguish:
+				ExtinguishImpl(back);
+				break;
+			case ActionType::Relight:
+				RelightImpl(back);
+				break;
+			default: std::unreachable();
+			}
 			_pendingExtinguishes.pop();
 		}
 	}
@@ -282,16 +446,57 @@ namespace FireManipulator::CellData
 		_queued = false;
 	}
 
-	void CellData::ExtinguishImpl(const PendingData& data) {
+	void CellData::RelightImpl(const PendingData& data) {
 		auto* vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
 		auto* handlePolicy = vm ? vm->GetObjectHandlePolicy() : nullptr;
 		if (!handlePolicy) {
 			return;
 		}
 
+		auto* offFire = data.fire;
+		if (!offFire) {
+			return;
+		}
+
+		RE::VMHandle handle = handlePolicy->GetHandleForObject(RE::TESObjectREFR::FORMTYPE, offFire);
+		auto found = vm->attachedScripts.find(handle);
+		if (found == vm->attachedScripts.end()) {
+			return;
+		}
+
+		for (auto& script : found->second) {
+			auto* info = script ? script->GetTypeInfo() : nullptr;
+			if (!info || info->GetName() != "REF_ObjectRefOffController"sv) {
+				continue;
+			}
+
+			auto callback = RE::BSTSmartPointer<RE::BSScript::IStackCallbackFunctor>();
+			auto args = RE::MakeFunctionArguments();
+			const RE::BSFixedString functionName = "Relight";
+			auto scriptObject = script.get();
+			auto object = RE::BSTSmartPointer<RE::BSScript::Object>(scriptObject);
+			vm->DispatchMethodCall(object, functionName, args, callback);
+			break;
+		}
+	}
+
+	void CellData::ExtinguishImpl(const PendingData& data) {
+#ifndef NDEBUG
+		const auto* base = data.fire->GetBaseObject();
+		const std::string edid = clib_util::editorID::get_editorID(base);
+		LOG_DEBUG("Extinguishing: {}"sv, edid);
+#endif
+		auto* vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
+		auto* handlePolicy = vm ? vm->GetObjectHandlePolicy() : nullptr;
+		if (!handlePolicy) {
+			LOG_DEBUG("  - No Handle Policy"sv);
+			return;
+		}
+
 		auto* lit = data.fire;
 		auto placedOff = lit->PlaceObjectAtMe(data.unlit, false);
 		if (!placedOff) {
+			LOG_DEBUG("  - No <OFF> placed."sv);
 			return;
 		}
 
@@ -299,6 +504,7 @@ namespace FireManipulator::CellData
 		auto found = vm->attachedScripts.find(handle);
 		if (found == vm->attachedScripts.end()) {
 			placedOff->DeleteThis();
+			LOG_DEBUG("  - No <Scripts>"sv);
 			return;
 		}
 
@@ -342,6 +548,7 @@ namespace FireManipulator::CellData
 		}
 
 		if (errored) {
+			LOG_DEBUG("  - Errored"sv);
 			transitioningFires.erase(data.fire->GetFormID());
 			if (data.light) {
 				reservedSmokesAndLights.erase(data.light->GetFormID());
