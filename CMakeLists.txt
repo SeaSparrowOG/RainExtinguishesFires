@@ -8,7 +8,7 @@ endif()
 # -------- Project ----------
 project(
 	RainExtinguishesFires
-	VERSION 6.0.0
+	VERSION 5.1.0
 	LANGUAGES CXX
 )
 
