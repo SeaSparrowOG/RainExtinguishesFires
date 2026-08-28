@@ -87,28 +87,28 @@ namespace FireManipulator
 	using EventControl = RE::BSEventNotifyControl;
 
 	bool Manipulator::HookWeatherChange() {
-		logger::info("   - Installing Weather Change Hook..."sv);
+		logger::INFO("   - Installing Weather Change Hook..."sv);
 		REL::Relocation<std::uintptr_t> target{ RE::Offset::Sky::UpdateWeather, RE::Offset::Sky::UpdateWeather__ChangeWeather };
-		if (!REL::make_pattern<"E8">().match(target.address())) {
-			logger::error("    Failed to validate OPCode."sv);
+		if (!REL::Pattern<"E8">().match(target.address())) {
+			logger::CRITICAL("    Failed to validate OPCode."sv);
 			return false;
 		}
-		auto& trampoline = SKSE::GetTrampoline();
+		auto& trampoline = REL::GetTrampoline();
 		_changeWeather = trampoline.write_call<5>(target.address(), &ChangeWeather);
 		return true;
 	}
 
 	void Manipulator::InstallPlayerUpdateHook() {
-		logger::info("  - Installing Update Hook..."sv);
+		logger::INFO("  - Installing Update Hook..."sv);
 		REL::Relocation<std::uintptr_t> VTABLE{ RE::PlayerCharacter::VTABLE[0] };
 		_update = VTABLE.write_vfunc(0xAD, Update);
 	}
 
 	bool Manipulator::RegisterForEvents() {
-		logger::info("  - Registering event listeners..."sv);
+		logger::INFO("  - Registering event listeners..."sv);
 		auto* sourceHolder = RE::ScriptEventSourceHolder::GetSingleton();
 		if (!sourceHolder) {
-			logger::info("    Failed to get the game's scripted event source holder. You will crash later, and it won't be my fault."sv);
+			logger::INFO("    Failed to get the game's scripted event source holder. You will crash later, and it won't be my fault."sv);
 			return false;
 		}
 
@@ -118,7 +118,7 @@ namespace FireManipulator
 
 		auto* player = RE::PlayerCharacter::GetSingleton();
 		if (!player) {
-			logger::critical("    Failed to get the game's player singleton. You will crash later, and it won't be my fault."sv);
+			logger::CRITICAL("    Failed to get the game's player singleton. You will crash later, and it won't be my fault."sv);
 			return false;
 		}
 
@@ -349,7 +349,7 @@ namespace FireManipulator
 		None
 	};
 
-	static WeatherType GetWeatherType(const REX::EnumSet<RE::TESWeather::WeatherDataFlag, uint8_t> flags) {
+	static WeatherType GetWeatherType(const REX::TEnumSet<RE::TESWeather::WeatherDataFlag, uint8_t> flags) {
 		using WeatherFlag = RE::TESWeather::WeatherDataFlag;
 		if (flags.any(WeatherFlag::kRainy, WeatherFlag::kSnow)) {
 			return WeatherType::Rainy;
@@ -445,7 +445,6 @@ namespace FireManipulator
 
 	bool Manipulator::RegisterForGameEvents() {
 		bool success = true;
-		SKSE::AllocTrampoline(14u);
 		InstallPlayerUpdateHook();
 		success &= HookWeatherChange();
 		success &= RegisterForEvents();
@@ -471,17 +470,17 @@ namespace FireManipulator
 	}
 
 	bool Install() {
-		logger::info("Register for events and installing hooks..."sv);
+		logger::INFO("Register for events and installing hooks..."sv);
 		auto* manipulator = Manipulator::GetSingleton();
 		if (!manipulator) {
-			logger::critical("Failed to get internal fire manipulator. Aborting load..."sv);
+			logger::CRITICAL("Failed to get internal fire manipulator. Aborting load..."sv);
 			return false;
 		}
 		if (!manipulator->RegisterForGameEvents()) {
-			logger::critical("Failed to install all needed listeners."sv);
+			logger::CRITICAL("Failed to install all needed listeners."sv);
 			return false;
 		}
-		logger::info("Startup completed - enjoy your game!"sv);
+		logger::INFO("Startup completed - enjoy your game!"sv);
 		return true;
 	}
 }

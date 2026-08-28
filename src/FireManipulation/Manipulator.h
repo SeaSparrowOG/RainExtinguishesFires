@@ -5,7 +5,7 @@
 namespace FireManipulator
 {
 	class Manipulator final : 
-		public REX::Singleton<Manipulator>,
+		public REX::TSingleton<Manipulator>,
 		public RE::BSTEventSink<RE::BGSActorCellEvent>,
 		public RE::BSTEventSink<RE::TESCellAttachDetachEvent>,
 		public RE::BSTEventSink<RE::TESCellFullyLoadedEvent>,

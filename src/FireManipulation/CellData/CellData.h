@@ -22,7 +22,7 @@ namespace FireManipulator
 	namespace CellData
 	{
 
-		class CellData final : public SKSE::detail::TaskDelegate
+		class CellData final : public SKSE::Impl::TaskDelegate
 		{
 		public:
 			CellData();

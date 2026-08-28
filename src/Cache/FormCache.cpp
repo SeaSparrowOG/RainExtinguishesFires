@@ -61,7 +61,7 @@ namespace Cache
 	bool FormCache::Initialize() {
 		static auto* settings = Settings::JSON::Holder::GetSingleton();
 		if (!settings) {
-			logger::critical("  - Failed to get interla Settings singleton."sv);
+			logger::CRITICAL("  - Failed to get interla Settings singleton."sv);
 			return false;
 		}
 
@@ -70,17 +70,17 @@ namespace Cache
 		for (const auto& [name, config] : configs) {
 			if (config.isArray()) {
 				if (!ParseArray(config)) {
-					logger::critical("  - Error reading config: {}"sv, name);
+					logger::CRITICAL("  - Error reading config: {}"sv, name);
 					success = false;
 				}
 			}
 			else if (config.isObject()) {
 				if (!ParseObject(config)) {
-					logger::critical("  - Error reading config: {}"sv, name);
+					logger::CRITICAL("  - Error reading config: {}"sv, name);
 				}
 			}
 			else {
-				logger::critical("  - Error reading config (not array or object): {}"sv, name);
+				logger::CRITICAL("  - Error reading config (not array or object): {}"sv, name);
 				return false;
 			}
 		}
