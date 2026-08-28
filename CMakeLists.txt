@@ -33,6 +33,18 @@ list(APPEND CMAKE_MODULE_PATH
 	"${PROJECT_SOURCE_DIR}/tools/Bethesda-CMakeModules/Modules"
 )
 
+set(VCPKG_OVERLAY_PORTS "")
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/External/CommonLibSSE/cmake/ports/commonlib-shared/portfile.cmake")
+	list(APPEND VCPKG_OVERLAY_PORTS "${CMAKE_CURRENT_SOURCE_DIR}/extern/CommonLibSSE/cmake/ports")
+else()
+	message(FATAL_ERROR "commonlib-shared overlay port not found in any CommonLibSSE checkout")
+endif()
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ports")
+	list(APPEND VCPKG_OVERLAY_PORTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ports")
+endif()
+
 include(SKSEPlugin)
 set(SKSE_USE_XBYAK ON)
 add_compile_definitions(SKSE_SUPPORT_XBYAK)
