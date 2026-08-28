@@ -36,7 +36,7 @@ list(APPEND CMAKE_MODULE_PATH
 set(VCPKG_OVERLAY_PORTS "")
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/External/CommonLibSSE/cmake/ports/commonlib-shared/portfile.cmake")
-	list(APPEND VCPKG_OVERLAY_PORTS "${CMAKE_CURRENT_SOURCE_DIR}/extern/CommonLibSSE/cmake/ports")
+	list(APPEND VCPKG_OVERLAY_PORTS "${CMAKE_CURRENT_SOURCE_DIR}/External/CommonLibSSE/cmake/ports")
 else()
 	message(FATAL_ERROR "commonlib-shared overlay port not found in any CommonLibSSE checkout")
 endif()
@@ -44,6 +44,8 @@ endif()
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ports")
 	list(APPEND VCPKG_OVERLAY_PORTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ports")
 endif()
+
+message(STATUS "VCPKG_OVERLAY_PORTS = ${VCPKG_OVERLAY_PORTS}")
 
 include(SKSEPlugin)
 set(SKSE_USE_XBYAK ON)
