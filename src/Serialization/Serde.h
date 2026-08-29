@@ -33,7 +33,7 @@ namespace Serialization
 		std::uint32_t serdeID{ 0 };
 	};
 
-	class ObjectManager : public REX::Singleton<ObjectManager>
+	class ObjectManager : public REX::TSingleton<ObjectManager>
 	{
 	public:
 		bool Save(SKSE::SerializationInterface* a_intfc);

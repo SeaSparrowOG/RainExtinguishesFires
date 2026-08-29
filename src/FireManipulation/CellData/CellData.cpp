@@ -218,7 +218,7 @@ namespace FireManipulator::CellData
 
 			if (!_pendingExtinguishes.empty() && !_queued) {
 				_queued = true;
-				tasks->AddTask(reinterpret_cast<::TaskDelegate*>(this));
+				tasks->AddTask(reinterpret_cast<SKSE::TaskDelegate*>(this));
 			}
 		}
 		else if (!unlitFires.empty() && !raining) {
@@ -264,7 +264,7 @@ namespace FireManipulator::CellData
 
 			if (!_pendingExtinguishes.empty() && !_queued) {
 				_queued = true;
-				tasks->AddTask(reinterpret_cast<::TaskDelegate*>(this));
+				tasks->AddTask(reinterpret_cast<SKSE::TaskDelegate*>(this));
 			}
 		}
 	}
@@ -359,7 +359,7 @@ namespace FireManipulator::CellData
 		_pendingExtinguishes.emplace(std::move(data));
 		if (!_pendingExtinguishes.empty() && !_queued) {
 			_queued = true;
-			tasks->AddTask(reinterpret_cast<::TaskDelegate*>(this));
+			tasks->AddTask(reinterpret_cast<SKSE::TaskDelegate*>(this));
 		}
 	}
 
@@ -391,7 +391,7 @@ namespace FireManipulator::CellData
 		_pendingExtinguishes.emplace(std::move(data));
 		if (!_pendingExtinguishes.empty() && !_queued) {
 			_queued = true;
-			tasks->AddTask(reinterpret_cast<::TaskDelegate*>(this));
+			tasks->AddTask(reinterpret_cast<SKSE::TaskDelegate*>(this));
 		}
 	}
 

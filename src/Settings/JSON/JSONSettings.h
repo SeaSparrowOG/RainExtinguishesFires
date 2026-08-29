@@ -6,7 +6,7 @@ namespace Settings
 	{
 		[[nodiscard]] bool Preload();
 
-		class Holder : public REX::Singleton<Holder>
+		class Holder : public REX::TSingleton<Holder>
 		{
 		public:
 			using ConfigMap = std::map<std::string, Json::Value>;

@@ -7,7 +7,7 @@ namespace Settings
 		bool Read();
 
 		class Holder :
-			public REX::Singleton<Holder>
+			public REX::TSingleton<Holder>
 		{
 		public:
 			bool StoreSettings();

@@ -9,7 +9,7 @@ namespace Cache
 		std::optional<float> _resizeByPercent = std::nullopt;
 	};
 
-	class FormCache final : public REX::Singleton<FormCache>
+	class FormCache final : public REX::TSingleton<FormCache>
 	{
 	public:
 		[[nodiscard]] bool Initialize();
@@ -30,10 +30,10 @@ namespace Cache
 
 	[[nodiscard]]
 	static inline bool InitializeCache() {
-		logger::info("Initialiazing Form Cache..."sv);
+		logger::INFO("Initialiazing Form Cache..."sv);
 		auto* cache = FormCache::GetSingleton();
 		if (!cache) {
-			logger::critical("  - Failed to retrieve internal Form Cache."sv);
+			logger::CRITICAL("  - Failed to retrieve internal Form Cache."sv);
 			return false;
 		}
 		return cache->Initialize();

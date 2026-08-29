@@ -77,20 +77,20 @@ namespace Papyrus
 	}
 
 	static void Bind(VM& a_vm) {
-		logger::info("  >Binding GetVersion..."sv);
+		logger::INFO("  >Binding GetVersion..."sv);
 		BIND(GetVersion);
-		logger::info("  >Binding IsRaining..."sv);
+		logger::INFO("  >Binding IsRaining..."sv);
 		BIND(IsRaining);
-		logger::info("  >Binding ExtinguishAllLoadedFires..."sv);
+		logger::INFO("  >Binding ExtinguishAllLoadedFires..."sv);
 		BIND(UnFreezeFire);
-		logger::info("  >Binding RegisterForAllEvents..."sv);
+		logger::INFO("  >Binding RegisterForAllEvents..."sv);
 		BIND(FreezeFire);
 	}
 
 	bool RegisterFunctions(VM* a_vm) {
-		logger::info("Binding papyrus functions in utility script {}..."sv, script);
+		logger::INFO("Binding papyrus functions in utility script {}..."sv, script);
 		Bind(*a_vm);
-		logger::info("Finished binding functions."sv);
+		logger::INFO("Finished binding functions."sv);
 		return true;
 	}
 }
