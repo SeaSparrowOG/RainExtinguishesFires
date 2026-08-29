@@ -17,41 +17,73 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v5
-      with:
-        submodules: recursive
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
 
-    - name: Setup vcpkg
-      run: |
-        mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
-        cd $env:VCPKG_INSTALLATION_ROOT
-        ./bootstrap-vcpkg.bat
-        ./vcpkg --version > ${{ github.workspace }}/vcpkg-version.txt
+      - name: Setup vcpkg
+        shell: pwsh
+        run: |
+          $vcpkgManifest = Get-Content "${{ github.workspace }}\vcpkg.json" | ConvertFrom-Json
+          $vcpkgCommit = $vcpkgManifest."builtin-baseline"
 
-    - name: Cache vcpkg
-      uses: actions/cache@v5
-      id: vcpkg-cache
-      env:
-        cache-name: vcpkg-cache
-      with:
-        path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('main/**/vcpkg.json', 'vcpkg-version.txt') }}
+          if ([string]::IsNullOrWhiteSpace($vcpkgCommit)) {
+            throw "vcpkg.json does not contain a builtin-baseline."
+          }
 
-    - name: Configure CMake
-      run: |
-        cmake --preset vs-github-vcpkg-release -Wno-deprecated
+          Write-Host "Using vcpkg baseline: $vcpkgCommit"
 
-    - name: Build
-      run: |
-        cmake --build ${{ github.workspace }}/build --config ${{ env.BUILD_TYPE }}
+          if (Test-Path "${{ env.VCPKG_ROOT }}") {
+            Remove-Item "${{ env.VCPKG_ROOT }}" -Recurse -Force
+          }
 
-    - name: Install
-      run: |
-        cmake --install ${{ github.workspace }}/build --component "components" --config ${{ env.BUILD_TYPE }} --prefix ${{ github.workspace }}/ReleaseBuild
-        cmake --install ${{ github.workspace }}/build --component "SKSEPlugin" --config ${{ env.BUILD_TYPE }} --prefix ${{ github.workspace }}/ReleaseBuild
+          git clone https://github.com/microsoft/vcpkg.git "${{ env.VCPKG_ROOT }}"
+          git -C "${{ env.VCPKG_ROOT }}" checkout --detach $vcpkgCommit
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v5
-      with:
-        name: ${{ github.event.repository.name }}
-        path: ${{ github.workspace }}/ReleaseBuild
+          git -C "${{ env.VCPKG_ROOT }}" show "$vcpkgCommit:versions/baseline.json" > $null
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "vcpkg commit $vcpkgCommit does not contain versions/baseline.json and cannot be used as a builtin-baseline."
+          }
+
+          & "${{ env.VCPKG_ROOT }}\bootstrap-vcpkg.bat"
+
+          New-Item `
+            -ItemType Directory `
+            -Force `
+            -Path "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}" | Out-Null
+
+          & "${{ env.VCPKG_ROOT }}\vcpkg.exe" --version |
+            Out-File "${{ github.workspace }}\vcpkg-version.txt"
+
+          Write-Host "vcpkg commit:"
+          git -C "${{ env.VCPKG_ROOT }}" rev-parse HEAD
+
+      - name: Cache vcpkg
+        uses: actions/cache@v5
+        id: vcpkg-cache
+        env:
+          cache-name: vcpkg-cache
+        with:
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/vcpkg.json', 'vcpkg-version.txt') }}
+
+      - name: Configure CMake
+        run: |
+          cmake --preset vs-github-vcpkg-release -Wno-deprecated
+
+      - name: Build
+        run: |
+          cmake --build ${{ github.workspace }}/build --config ${{ env.BUILD_TYPE }}
+
+      - name: Install
+        run: |
+          cmake --install ${{ github.workspace }}/build --component "components" --config ${{ env.BUILD_TYPE }} --prefix ${{ github.workspace }}/ReleaseBuild
+          cmake --install ${{ github.workspace }}/build --component "SKSEPlugin" --config ${{ env.BUILD_TYPE }} --prefix ${{ github.workspace }}/ReleaseBuild
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ github.event.repository.name }}
+          path: ${{ github.workspace }}/ReleaseBuild
