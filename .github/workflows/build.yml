@@ -41,13 +41,23 @@ jobs:
           git clone https://github.com/microsoft/vcpkg.git "${{ env.VCPKG_ROOT }}"
           git -C "${{ env.VCPKG_ROOT }}" checkout --detach $vcpkgCommit
 
-          git -C "${{ env.VCPKG_ROOT }}" show "$vcpkgCommit:versions/baseline.json" > $null
-
           if ($LASTEXITCODE -ne 0) {
-            throw "vcpkg commit $vcpkgCommit does not contain versions/baseline.json and cannot be used as a builtin-baseline."
+            throw "Failed to checkout vcpkg commit $vcpkgCommit."
           }
 
+          $baselinePath = "${vcpkgCommit}:versions/baseline.json"
+          git -C "${{ env.VCPKG_ROOT }}" show $baselinePath > $null
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "vcpkg commit $vcpkgCommit does not contain versions/baseline.json."
+          }
+
+          Write-Host "Verified builtin-baseline: $vcpkgCommit"
           & "${{ env.VCPKG_ROOT }}\bootstrap-vcpkg.bat"
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "vcpkg bootstrap failed."
+          }
 
           New-Item `
             -ItemType Directory `
