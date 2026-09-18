@@ -3,27 +3,27 @@
 namespace Data
 {
 	bool ModObjectManager::PreLoad() {
-		logger::INFO("  >Looking for script {} on quest {}..."sv, ScriptName, QuestName);
+		REX::INFO("  >Looking for script {} on quest {}..."sv, ScriptName, QuestName);
 		const auto quest = RE::TESForm::LookupByEditorID<RE::TESQuest>(QuestName);
 		if (!quest) {
 			if (EXPECTED_OBJECTS.empty()) {
-				logger::INFO("    >No need to preload mod objects."sv);
+				REX::INFO("    >No need to preload mod objects."sv);
 				return true;
 			}
-			logger::CRITICAL("  >Failed to lookup quest."sv);
+			REX::CRITICAL("  >Failed to lookup quest."sv);
 			return false;
 		}
 
 		const auto vm = RE::BSScript::Internal::VirtualMachine::GetSingleton();
 		if (!vm) {
-			logger::CRITICAL("  >Failed to get VM"sv);
+			REX::CRITICAL("  >Failed to get VM"sv);
 			return false;
 		}
 
 		const auto bindPolicy = vm->GetObjectBindPolicy();
 		const auto handlePolicy = vm->GetObjectHandlePolicy();
 		if (!bindPolicy || !handlePolicy) {
-			logger::CRITICAL("  >Failed to get VM object policies"sv);
+			REX::CRITICAL("  >Failed to get VM object policies"sv);
 			return false;
 		}
 
@@ -44,7 +44,7 @@ namespace Data
 						objects.emplace(keyName, foundForm);
 					}
 					else {
-						logger::CRITICAL("  >Undefined element in array propery {}."sv, name.c_str());
+						REX::CRITICAL("  >Undefined element in array propery {}."sv, name.c_str());
 						return false;
 					}
 					++index;
@@ -53,20 +53,20 @@ namespace Data
 			else if (var.IsObject()) {
 				const auto value = var.Unpack<RE::TESForm*>();
 				if (!value) {
-					logger::CRITICAL("  >Property {} is null."sv, name.c_str());
+					REX::CRITICAL("  >Property {} is null."sv, name.c_str());
 					return false;
 				}
 				objects.emplace(name, value);
 			}
 			else {
-				logger::CRITICAL("  >Undefined property {}", name.c_str());
+				REX::CRITICAL("  >Undefined property {}", name.c_str());
 				return false;
 			}
 		}
 
 		vm->ResetAllBoundObjects(handle);
-		logger::INFO("  >Found {} Mod Objects."sv, properties.size());
-		logger::INFO("Done."sv);
+		REX::INFO("  >Found {} Mod Objects."sv, properties.size());
+		REX::INFO("Done."sv);
 		return Verify();
 	}
 
@@ -79,25 +79,25 @@ namespace Data
 	}
 
 	bool ModObjectManager::Verify() {
-		logger::INFO("Verifying discovered objects:"sv);
+		REX::INFO("Verifying discovered objects:"sv);
 		bool foundAll = true;
 		for (const auto* objectName : EXPECTED_OBJECTS) {
 			if (!objects.contains(std::string(objectName))) {
 				foundAll = false;
-				logger::CRITICAL("  >Failed to find {}.", objectName);
+				REX::CRITICAL("  >Failed to find {}.", objectName);
 			}
 			else {
-				logger::INFO("  >Found {}", objectName);
+				REX::INFO("  >Found {}", objectName);
 			}
 		}
 		return foundAll;
 	}
 
 	bool PreloadModObjects() {
-		logger::INFO("Preloading Mod Objects..."sv);
+		REX::INFO("Preloading Mod Objects..."sv);
 		auto* objectManager = ModObjectManager::GetSingleton();
 		if (!objectManager) {
-			logger::CRITICAL("  >Failed to get Mod Object manager."sv);
+			REX::CRITICAL("  >Failed to get Mod Object manager."sv);
 			return false;
 		}
 		return objectManager->PreLoad();

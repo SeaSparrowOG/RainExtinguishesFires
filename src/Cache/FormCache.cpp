@@ -1,5 +1,7 @@
 #include "FormCache.h"
 
+#include "ClibUtil/editorID.hpp"
+#include "ClibUtil/string.hpp"
 #include "Settings/JSON/JSONSettings.h"
 
 #include <expected>
@@ -61,7 +63,7 @@ namespace Cache
 	bool FormCache::Initialize() {
 		static auto* settings = Settings::JSON::Holder::GetSingleton();
 		if (!settings) {
-			logger::CRITICAL("  - Failed to get interla Settings singleton."sv);
+			REX::CRITICAL("  - Failed to get interla Settings singleton."sv);
 			return false;
 		}
 
@@ -70,17 +72,17 @@ namespace Cache
 		for (const auto& [name, config] : configs) {
 			if (config.isArray()) {
 				if (!ParseArray(config)) {
-					logger::CRITICAL("  - Error reading config: {}"sv, name);
+					REX::CRITICAL("  - Error reading config: {}"sv, name);
 					success = false;
 				}
 			}
 			else if (config.isObject()) {
 				if (!ParseObject(config)) {
-					logger::CRITICAL("  - Error reading config: {}"sv, name);
+					REX::CRITICAL("  - Error reading config: {}"sv, name);
 				}
 			}
 			else {
-				logger::CRITICAL("  - Error reading config (not array or object): {}"sv, name);
+				REX::CRITICAL("  - Error reading config (not array or object): {}"sv, name);
 				return false;
 			}
 		}

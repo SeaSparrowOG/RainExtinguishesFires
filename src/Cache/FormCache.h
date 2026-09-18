@@ -30,10 +30,10 @@ namespace Cache
 
 	[[nodiscard]]
 	static inline bool InitializeCache() {
-		logger::INFO("Initialiazing Form Cache..."sv);
+		REX::INFO("Initialiazing Form Cache..."sv);
 		auto* cache = FormCache::GetSingleton();
 		if (!cache) {
-			logger::CRITICAL("  - Failed to retrieve internal Form Cache."sv);
+			REX::CRITICAL("  - Failed to retrieve internal Form Cache."sv);
 			return false;
 		}
 		return cache->Initialize();

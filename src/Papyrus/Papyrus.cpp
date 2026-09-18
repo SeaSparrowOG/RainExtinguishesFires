@@ -77,20 +77,26 @@ namespace Papyrus
 	}
 
 	static void Bind(VM& a_vm) {
-		logger::INFO("  >Binding GetVersion..."sv);
+		REX::INFO("  >Binding GetVersion..."sv);
 		BIND(GetVersion);
-		logger::INFO("  >Binding IsRaining..."sv);
+		REX::INFO("  >Binding IsRaining..."sv);
 		BIND(IsRaining);
-		logger::INFO("  >Binding ExtinguishAllLoadedFires..."sv);
+		REX::INFO("  >Binding ExtinguishAllLoadedFires..."sv);
 		BIND(UnFreezeFire);
-		logger::INFO("  >Binding RegisterForAllEvents..."sv);
+		REX::INFO("  >Binding RegisterForAllEvents..."sv);
 		BIND(FreezeFire);
 	}
 
-	bool RegisterFunctions(VM* a_vm) {
-		logger::INFO("Binding papyrus functions in utility script {}..."sv, script);
+	static bool RegisterImpl(VM* a_vm) {
 		Bind(*a_vm);
-		logger::INFO("Finished binding functions."sv);
 		return true;
+	}
+
+	bool RegisterFunctions() {
+		auto* papyrusInterface = SKSE::GetPapyrusInterface();
+		if (!papyrusInterface) {
+			return false;
+		}
+		return papyrusInterface->Register(RegisterImpl);
 	}
 }

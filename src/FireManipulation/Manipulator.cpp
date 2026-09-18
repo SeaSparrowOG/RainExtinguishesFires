@@ -87,10 +87,10 @@ namespace FireManipulator
 	using EventControl = RE::BSEventNotifyControl;
 
 	bool Manipulator::HookWeatherChange() {
-		logger::INFO("   - Installing Weather Change Hook..."sv);
+		REX::INFO("   - Installing Weather Change Hook..."sv);
 		REL::Relocation<std::uintptr_t> target{ RE::Offset::Sky::UpdateWeather, RE::Offset::Sky::UpdateWeather__ChangeWeather };
 		if (!REL::Pattern<"E8">().match(target.address())) {
-			logger::CRITICAL("    Failed to validate OPCode."sv);
+			REX::CRITICAL("    Failed to validate OPCode."sv);
 			return false;
 		}
 		auto& trampoline = REL::GetTrampoline();
@@ -99,16 +99,16 @@ namespace FireManipulator
 	}
 
 	void Manipulator::InstallPlayerUpdateHook() {
-		logger::INFO("  - Installing Update Hook..."sv);
+		REX::INFO("  - Installing Update Hook..."sv);
 		REL::Relocation<std::uintptr_t> VTABLE{ RE::PlayerCharacter::VTABLE[0] };
 		_update = VTABLE.write_vfunc(0xAD, Update);
 	}
 
 	bool Manipulator::RegisterForEvents() {
-		logger::INFO("  - Registering event listeners..."sv);
+		REX::INFO("  - Registering event listeners..."sv);
 		auto* sourceHolder = RE::ScriptEventSourceHolder::GetSingleton();
 		if (!sourceHolder) {
-			logger::INFO("    Failed to get the game's scripted event source holder. You will crash later, and it won't be my fault."sv);
+			REX::INFO("    Failed to get the game's scripted event source holder. You will crash later, and it won't be my fault."sv);
 			return false;
 		}
 
@@ -118,7 +118,7 @@ namespace FireManipulator
 
 		auto* player = RE::PlayerCharacter::GetSingleton();
 		if (!player) {
-			logger::CRITICAL("    Failed to get the game's player singleton. You will crash later, and it won't be my fault."sv);
+			REX::CRITICAL("    Failed to get the game's player singleton. You will crash later, and it won't be my fault."sv);
 			return false;
 		}
 
@@ -470,17 +470,17 @@ namespace FireManipulator
 	}
 
 	bool Install() {
-		logger::INFO("Register for events and installing hooks..."sv);
+		REX::INFO("Register for events and installing hooks..."sv);
 		auto* manipulator = Manipulator::GetSingleton();
 		if (!manipulator) {
-			logger::CRITICAL("Failed to get internal fire manipulator. Aborting load..."sv);
+			REX::CRITICAL("Failed to get internal fire manipulator. Aborting load..."sv);
 			return false;
 		}
 		if (!manipulator->RegisterForGameEvents()) {
-			logger::CRITICAL("Failed to install all needed listeners."sv);
+			REX::CRITICAL("Failed to install all needed listeners."sv);
 			return false;
 		}
-		logger::INFO("Startup completed - enjoy your game!"sv);
+		REX::INFO("Startup completed - enjoy your game!"sv);
 		return true;
 	}
 }
