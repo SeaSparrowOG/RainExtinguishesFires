@@ -2,42 +2,42 @@
 
 namespace Serialization {
 	void SaveCallback(SKSE::SerializationInterface* a_intfc) {
-		logger::INFO("Starting save..."sv);
+		REX::INFO("Starting save..."sv);
 		auto* serdeManager = ObjectManager::GetSingleton();
 		if (!serdeManager) {
-			logger::CRITICAL("  >Failed to get internal serialization manager."sv);
+			REX::CRITICAL("  >Failed to get internal serialization manager."sv);
 			REX::FAIL(fmt::format("{}:  Failed to save. Check the log for more information.", Plugin::NAME));
 		}
 		if (!serdeManager->Save(a_intfc)) {
 			REX::FAIL(fmt::format("{}:  Failed to save. Check the log for more information.", Plugin::NAME));
 		}
-		logger::INFO("  >Save successful."sv);
+		REX::INFO("  >Save successful."sv);
 	}
 
 	void LoadCallback(SKSE::SerializationInterface* a_intfc) {
-		logger::INFO("Starting load..."sv);
+		REX::INFO("Starting load..."sv);
 		auto* serdeManager = ObjectManager::GetSingleton();
 		if (!serdeManager) {
-			logger::CRITICAL("  >Failed to get internal serialization manager."sv);
+			REX::CRITICAL("  >Failed to get internal serialization manager."sv);
 			REX::FAIL(fmt::format("{}:  Failed to load. Check the log for more information.", Plugin::NAME));
 		}
 		if (!serdeManager->Load(a_intfc)) {
 			REX::FAIL(fmt::format("{}:  Failed to load. Check the log for more information.", Plugin::NAME));
 		}
-		logger::INFO("  >Load successful."sv);
+		REX::INFO("  >Load successful."sv);
 	}
 
 	void RevertCallback(SKSE::SerializationInterface* a_intfc) {
-		logger::INFO("Starting revert..."sv);
+		REX::INFO("Starting revert..."sv);
 		auto* serdeManager = ObjectManager::GetSingleton();
 		if (!serdeManager) {
-			logger::CRITICAL("  >Failed to get internal serialization manager."sv);
+			REX::CRITICAL("  >Failed to get internal serialization manager."sv);
 			REX::FAIL(fmt::format("{}:  Failed to revert. Check the log for more information.", Plugin::NAME));
 		}
 		if (!serdeManager->Revert(a_intfc)) {
 			REX::FAIL(fmt::format("{}:  Failed to revert. Check the log for more information.", Plugin::NAME));
 		}
-		logger::INFO("  >Revert successful."sv);
+		REX::INFO("  >Revert successful."sv);
 	}
 
 	bool ObjectManager::Save(SKSE::SerializationInterface* a_intfc) {
@@ -48,7 +48,7 @@ namespace Serialization {
 		for (auto& obj : recordObjectMap) {
 			bool serializableSuccess = obj.second && obj.second->Save(a_intfc);
 			if (!serializableSuccess) {
-				logger::CRITICAL("  >Serialization error reported for object: {}"sv, obj.second ? 
+				REX::CRITICAL("  >Serialization error reported for object: {}"sv, obj.second ? 
 					DecodeTypeCode(obj.second->GetSerializationID()) : 
 					"NULL");
 			}
@@ -73,7 +73,7 @@ namespace Serialization {
 			if (it != end) {
 				bool serializableSuccess = it->second && it->second->Load(a_intfc);
 				if (!serializableSuccess) {
-					logger::CRITICAL("  >Serialization error reported for object: {}"sv, DecodeTypeCode(type));
+					REX::CRITICAL("  >Serialization error reported for object: {}"sv, DecodeTypeCode(type));
 				}
 				success &= serializableSuccess;
 			}
@@ -90,7 +90,7 @@ namespace Serialization {
 		for (auto& obj : recordObjectMap) {
 			bool serializableSuccess = obj.second && obj.second->Revert(a_intfc);
 			if (!serializableSuccess) {
-				logger::CRITICAL("  >Serialization error reported for object: {}"sv, obj.second ?
+				REX::CRITICAL("  >Serialization error reported for object: {}"sv, obj.second ?
 					DecodeTypeCode(obj.second->GetSerializationID()) :
 					"NULL");
 			}
@@ -124,7 +124,7 @@ namespace Serialization {
 	bool Serializable::Register(std::uint32_t a_id) {
 		auto* manager = ObjectManager::GetSingleton();
 		if (!manager) {
-			logger::CRITICAL("Critical error registering serializable form: Internal ObjectManager returned invalid pointer."sv);
+			REX::CRITICAL("Critical error registering serializable form: Internal ObjectManager returned invalid pointer."sv);
 			return false;
 		}
 

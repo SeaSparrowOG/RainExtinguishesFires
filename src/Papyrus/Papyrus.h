@@ -8,5 +8,5 @@ namespace Papyrus {
 	using VM = RE::BSScript::Internal::VirtualMachine;
 	using StackID = RE::VMStackID;
 	inline auto script = "REF_UtilityFunctions"sv;
-	bool RegisterFunctions(VM* a_vm);
+	bool RegisterFunctions();
 }

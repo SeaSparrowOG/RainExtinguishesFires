@@ -4,11 +4,7 @@
 #include "SKSE/SKSE.h"
 #include "REX/REX.h"
 
-#define W32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <Windows.h>
-#include "ClibUtil/utils.hpp"
-
+#include <expected>>
 #include <unordered_set>
 #include <fstream>
 #include <spdlog/sinks/basic_file_sink.h>
@@ -23,8 +19,6 @@
 #else
 #define LOG_DEBUG(msg, ...)
 #endif
-
-namespace logger = REX;
 
 using namespace std::literals;
 namespace util
@@ -90,7 +84,7 @@ namespace stl {
 template <class T>
 inline constexpr bool always_false = false;
 
-#define SECTION_SEPARATOR logger::INFO("=========================================================="sv)
+#define SECTION_SEPARATOR REX::INFO("=========================================================="sv)
 
 #ifdef SKYRIM_AE
 #	define OFFSET(se, ae) ae

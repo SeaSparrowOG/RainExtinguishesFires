@@ -16,7 +16,7 @@ namespace Serialization
 	/// * When calling Register, provide an a_id that is unique for EACH class. If a duplicate insertion is attempted, the game closes.
 	/// * Make sure to provide logging for each Save/Load/Revert failure as details. ObjectManager does note some things.
 	/// * A pointer to a Serializable class is stored in the ObjectManager singleton after it is registered. To move/delete/whatever, first Unregister it from the ObjectManager.
-	/// * Ideally, also inherit from REX::Singleton to deal with lifetime issues.
+	/// * Ideally, also inherit from REX::TSingleton to deal with lifetime issues.
 	/// </summary>
 	class Serializable
 	{
