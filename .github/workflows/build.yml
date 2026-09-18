@@ -81,7 +81,7 @@ jobs:
 
       - name: Configure CMake
         run: |
-          cmake --preset vs-github-vcpkg-release -Wno-deprecated
+          cmake --preset vs-windows-vcpkg-github -Wno-deprecated
 
       - name: Build
         run: |
