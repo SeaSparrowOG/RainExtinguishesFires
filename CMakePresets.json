@@ -19,7 +19,7 @@
       "hidden": true,
       "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
-        "VCPKG_OVERLAY_PORTS": "${sourceDir}/External/CommonLibSSE/cmake/ports;${sourceDir}/cmake/ports"
+        "VCPKG_OVERLAY_PORTS": "${sourceDir}/External/CommonLibSSE/cmake/ports;${sourceDir}/cmake/ports;${sourceDir}/cmake/ports"
       }
     },
     {
@@ -54,7 +54,7 @@
       "binaryDir": "${sourceDir}/build-test"
     },
     {
-      "name": "vs-github-vcpkg-release",
+      "name": "vs-windows-vcpkg-github",
       "inherits": [
         "cmake-dev",
         "vcpkg",
@@ -95,6 +95,11 @@
   ],
   "buildPresets": [
     {
+      "name": "Github",
+      "configurePreset": "vs-windows-vcpkg-github",
+      "configuration": "Release"
+    },
+    {
       "name": "Release",
       "configurePreset": "vs-windows-vcpkg-release",
       "configuration": "Release"
@@ -103,11 +108,6 @@
       "name": "Test",
       "configurePreset": "vs-windows-vcpkg-test",
       "configuration": "Debug"
-    },
-    {
-      "name": "Github",
-      "configurePreset": "vs-github-vcpkg-release",
-      "configuration": "Release"
     }
   ]
 }

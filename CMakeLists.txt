@@ -8,7 +8,7 @@ endif()
 # -------- Project ----------
 project(
 	RainExtinguishesFires
-	VERSION 5.1.0
+	VERSION 5.1.1
 	LANGUAGES CXX
 )
 
@@ -32,20 +32,6 @@ list(APPEND CMAKE_MODULE_PATH
 list(APPEND CMAKE_MODULE_PATH
 	"${PROJECT_SOURCE_DIR}/tools/Bethesda-CMakeModules/Modules"
 )
-
-set(VCPKG_OVERLAY_PORTS "")
-
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/External/CommonLibSSE/cmake/ports/commonlib-shared/portfile.cmake")
-	list(APPEND VCPKG_OVERLAY_PORTS "${CMAKE_CURRENT_SOURCE_DIR}/External/CommonLibSSE/cmake/ports")
-else()
-	message(FATAL_ERROR "commonlib-shared overlay port not found in any CommonLibSSE checkout")
-endif()
-
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ports")
-	list(APPEND VCPKG_OVERLAY_PORTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ports")
-endif()
-
-message(STATUS "VCPKG_OVERLAY_PORTS = ${VCPKG_OVERLAY_PORTS}")
 
 include(SKSEPlugin)
 set(SKSE_USE_XBYAK ON)
@@ -90,23 +76,38 @@ set(INI_PATH "${SKSE_PLUGINS_DIR}/${PROJECT_NAME}.ini")
 set(PAPYRUS_SOURCE_DIR "${DATA_DIR}/Source/Scripts")
 set(CUSTOM_CONSOLE_DIR "${SKSE_DIR}/CustomConsole")
 
-if (IS_DIRECTORY PAPYRUS_SOURCE_DIR)
-	install(
-		DIRECTORY "${DATA_DIR}/Source"
-		DESTINATION "."
-		COMPONENT components
-	)
-endif()
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
 
-if (IS_DIRECTORY CUSTOM_CONSOLE_DIR)
-	install(
-		DIRECTORY "${SKSE_DIR}/CustomConsole"
-		DESTINATION "."
-		COMPONENT components
-	)
-endif()
+if (MSVC)
+	target_compile_options(
+		${PROJECT_NAME}
+		PRIVATE
+			/sdl                    # Enable Additional Security Checks
+			/utf-8                  # Set Source and Executable character sets to UTF-8
+			/Zi                     # Debug Information Format
 
-include(components.cmake)
+			/permissive-            # Standards conformance
+			/Zc:preprocessor        # Enable preprocessor conformance mode
+			/Zc:__cplusplus
+			
+			/wd4200                 # nonstandard extension used : zero-sized array in struct/union
+			/W4                     # More warnings 
+			/WX                     # Treat all warnings as errors
+			/external:anglebrackets # Ignore warnings for external resources.
+			/external:W0            # Same as above
+			
+			"$<$<CONFIG:DEBUG>:>"
+			"$<$<CONFIG:RELEASE>:/Zc:inline;/JMC-;/Ob3>"
+	)
+
+	target_link_options(
+		${PROJECT_NAME}
+		PRIVATE
+			"$<$<CONFIG:DEBUG>:/INCREMENTAL;/OPT:NOREF;/OPT:NOICF>"
+			"$<$<CONFIG:RELEASE>:/INCREMENTAL:NO;/OPT:REF;/OPT:ICF;/DEBUG:FULL>"
+	)
+endif ()
 
 # ---- Post build ----
 if(DEFINED ENV{SKYRIM_MODS_FOLDER} AND IS_DIRECTORY "$ENV{SKYRIM_MODS_FOLDER}")
@@ -117,12 +118,11 @@ if(DEFINED ENV{SKYRIM_MODS_FOLDER} AND IS_DIRECTORY "$ENV{SKYRIM_MODS_FOLDER}")
 	endif()
 endif()
 
+set(ARTIFACT_DIR "${CMAKE_BINARY_DIR}/Artifacts")
+
 # ---- Compile Papyrus Scripts and Pack Into Archive ----
 include(Papyrus)
 include(BSArchive)
-
-set(COPY_BSA OFF)
-set(COPY_SCRIPTS  OFF)
 
 if(EXISTS "${PAPYRUS_SOURCE_DIR}" AND IS_DIRECTORY "${Skyrim64Path}")
 	file(GLOB ${PROJECT_NAME}_SOURCES
@@ -143,14 +143,13 @@ if(EXISTS "${PAPYRUS_SOURCE_DIR}" AND IS_DIRECTORY "${Skyrim64Path}")
 		"BSA"
 		OUTPUT "${PROJECT_NAME}.bsa"
 		FORMAT SSE
-		FILES ${Papyrus_OUTPUT}
-	)
-	
+		FILES 
+			${Papyrus_OUTPUT}
+		PREFIX 
+			"${CMAKE_CURRENT_SOURCE_DIR}/Data"
+	)	
+
 	set(COPY_SCRIPTS ON)
-	if(FULL_RELEASE)
-		set(COPY_BSA ON)
-	endif()
-	
 elseif(EXISTS "${PAPYRUS_SOURCE_DIR}" AND NOT IS_DIRECTORY "${Skyrim64Path}")
 	message(STATUS "Scripts exist in the Data directory, but Skyrim's path was not found, compilation will be skipped.")
 else()
@@ -188,17 +187,14 @@ if(DEFINED OUTPUT_FOLDER)
 				-DOUTPUT_FOLDER=${OUTPUT_FOLDER}
 				-P "${PROJECT_SOURCE_DIR}/CMake/Scripts/CMake-Copy-Scripts.cmake"
 		)
-
-		if(COPY_BSA)
-			list(APPEND POST_BUILD_COMMANDS
-				COMMAND "${CMAKE_COMMAND}"
-					-DSRC_DIR=${DATA_DIR}
-					-DDST_DIR=${OUTPUT_FOLDER}
-					-DPROJECT_NAME=${PROJECT_NAME}
-					-DBINARY_DIR=${CMAKE_BINARY_DIR}
-					-P "${PROJECT_SOURCE_DIR}/CMake/Scripts/CMake-Copy-Archive.cmake"
-			)
-		endif()
+		list(APPEND POST_BUILD_COMMANDS
+			COMMAND "${CMAKE_COMMAND}"
+				-DSRC_DIR=${DATA_DIR}
+				-DDST_DIR=${OUTPUT_FOLDER}
+				-DPROJECT_NAME=${PROJECT_NAME}
+				-DBINARY_DIR=${CMAKE_BINARY_DIR}
+				-P "${PROJECT_SOURCE_DIR}/CMake/Scripts/CMake-Copy-Archive.cmake"
+		)
 	endif()
 	
 	
