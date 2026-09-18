@@ -116,10 +116,10 @@ SKSE_PLUGIN_LOAD(const SKSE::LoadInterface * a_skse)
 	SECTION_SEPARATOR;
 
 	SKSE::InitInfo info;
-	info.log = false;
-	info.hook = false;
-	info.trampoline = false;
-	info.trampolineSize = 0u;
+	info.log = true;
+	info.hook = true;
+	info.trampoline = true;
+	info.trampolineSize = 14u;
 	
 	SKSE::Init(a_skse, info);
 	REX::INFO("Author: SeaSparrow"sv);
