@@ -194,7 +194,7 @@ install(
 	FILES
 		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}/defaultFires.json"
 		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}/embersXDCampfires.json"
-	DESTINATION "02. Fire Options/01. Campfires"
+	DESTINATION "02. Fire Options/01. Campfires/SKSE/Plugins/${PROJECT_NAME}/"
 	COMPONENT components
 )
 
@@ -202,7 +202,7 @@ install(
 	FILES
 		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}/defaultEmbers.json"
 		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}/embersXDEmbers.json"
-	DESTINATION "02. Fire Options/02. Ember Fires"
+	DESTINATION "02. Fire Options/02. Ember Fires/SKSE/Plugins/${PROJECT_NAME}/"
 	COMPONENT components
 )
 
@@ -210,14 +210,14 @@ install(
 	FILES
 		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}/defaultGiantFires.json"
 		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}/embersXDGiantCampfires.json"
-	DESTINATION "02. Fire Options/03. Giant Fires"
+	DESTINATION "02. Fire Options/03. Giant Fires/SKSE/Plugins/${PROJECT_NAME}/"
 	COMPONENT components
 )
 
 install(
 	FILES
 		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}/defaultSmokes.json"
-	DESTINATION "02. Fire Options/04. Smoke Objects"
+	DESTINATION "02. Fire Options/04. Smoke Objects/SKSE/Plugins/${PROJECT_NAME}/"
 	COMPONENT components
 )
 
@@ -234,12 +234,8 @@ install(
 
 install(
 	FILES
-		"${DATA_DIR}/Source/Scripts/REF_FurnitureScript.psc"
-		"${DATA_DIR}/Source/Scripts/REF_ObjectRefOffController.psc"
-		"${DATA_DIR}/Source/Scripts/REF_QuestEventHandler.psc"
-		"${DATA_DIR}/Source/Scripts/REF_RefAliasLoadManager.psc"
-		"${DATA_DIR}/Source/Scripts/REF_UtilityFunctions.psc"
-	DESTINATION "04. Patches/Embers XD/RainExtinguishesEmbersXD.esp"
+		"${DATA_DIR}/RainExtinguishesEmbersXD.esp"
+	DESTINATION "04. Patches/Embers XD"
 	COMPONENT components
 )
 
