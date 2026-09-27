@@ -7,3 +7,7 @@
 [submodule "External/CommonLibSSE"]
 	path = External/CommonLibSSE
 	url = https://github.com/SeaSparrowOG/CommonLibSSE
+[submodule "External/CommonLibSSE_1.6"]
+	path = External/CommonLibSSE_1.6
+	url = https://github.com/SeaSparrowOG/CommonLibSSE
+	branch = dev-1.6
