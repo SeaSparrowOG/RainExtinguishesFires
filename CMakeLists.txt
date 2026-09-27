@@ -36,6 +36,7 @@ add_compile_definitions(SKYRIM_AE)
 add_compile_definitions(SKYRIM_SUPPORT_AE)
 
 set(SKSE_COMMONLIBSSE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/External/CommonLibSSE")
+set(SKSE_NO_INSTALL ON)
 
 if (GOG)
 	add_compile_definitions(SKYRIM_GOG)
@@ -174,15 +175,49 @@ endif()
 # ---- Github Release Stuff ----
 install(
 	FILES
+		"$<TARGET_FILE:${PROJECT_NAME}>"
+		"$<TARGET_PDB_FILE:${PROJECT_NAME}>"
 		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}.ini"
-	DESTINATION "SKSE/Plugins"
+	DESTINATION "01. Core/SKSE/Plugins"
 	COMPONENT components
 )
+
 install(
 	FILES
 		"${DATA_DIR}/${PROJECT_NAME}.esp"
 		"${DATA_DIR}/${PROJECT_NAME}.bsa"
-	DESTINATION "SKSE/Plugins"
+	DESTINATION "01. Core"
+	COMPONENT components
+)
+
+install(
+	FILES
+		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}/defaultFires.json"
+		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}/embersXDCampfires.json"
+	DESTINATION "02. Fire Options/01. Campfires"
+	COMPONENT components
+)
+
+install(
+	FILES
+		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}/defaultEmbers.json"
+		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}/embersXDEmbers.json"
+	DESTINATION "02. Fire Options/02. Ember Fires"
+	COMPONENT components
+)
+
+install(
+	FILES
+		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}/defaultGiantFires.json"
+		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}/embersXDGiantCampfires.json"
+	DESTINATION "02. Fire Options/03. Giant Fires"
+	COMPONENT components
+)
+
+install(
+	FILES
+		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}/defaultSmokes.json"
+	DESTINATION "02. Fire Options/04. Smoke Objects"
 	COMPONENT components
 )
 
@@ -193,19 +228,32 @@ install(
 		"${DATA_DIR}/Source/Scripts/REF_QuestEventHandler.psc"
 		"${DATA_DIR}/Source/Scripts/REF_RefAliasLoadManager.psc"
 		"${DATA_DIR}/Source/Scripts/REF_UtilityFunctions.psc"
-	DESTINATION "Source/Scripts"
+	DESTINATION "03. Sources/Source/Scripts"
 	COMPONENT components
 )
 
 install(
 	FILES
-		"${DATA_DIR}/SKSE/Plugins/RainExtinguishesFires/defaultEmbers.json"
-		"${DATA_DIR}/SKSE/Plugins/RainExtinguishesFires/defaultFires.json"
-		"${DATA_DIR}/SKSE/Plugins/RainExtinguishesFires/defaultGiantFires.json"
-		"${DATA_DIR}/SKSE/Plugins/RainExtinguishesFires/defaultSmokes.json"
-		"${DATA_DIR}/SKSE/Plugins/RainExtinguishesFires/embersXDCampfires.json"
-		"${DATA_DIR}/SKSE/Plugins/RainExtinguishesFires/embersXDEmbers.json"
-		"${DATA_DIR}/SKSE/Plugins/RainExtinguishesFires/embersXDGiantCampfires.json"
-	DESTINATION "SKSE/Plugins/RainExtinguishesFires"
+		"${DATA_DIR}/Source/Scripts/REF_FurnitureScript.psc"
+		"${DATA_DIR}/Source/Scripts/REF_ObjectRefOffController.psc"
+		"${DATA_DIR}/Source/Scripts/REF_QuestEventHandler.psc"
+		"${DATA_DIR}/Source/Scripts/REF_RefAliasLoadManager.psc"
+		"${DATA_DIR}/Source/Scripts/REF_UtilityFunctions.psc"
+	DESTINATION "04. Patches/Embers XD/RainExtinguishesEmbersXD.esp"
+	COMPONENT components
+)
+
+install(
+	FILES
+		"${PROJECT_SOURCE_DIR}/FOMOD/info.xml"
+		"${PROJECT_SOURCE_DIR}/FOMOD/ModuleConfig.xml"
+	DESTINATION "FOMOD"
+	COMPONENT components
+)
+
+install(
+	FILES
+		"${PROJECT_SOURCE_DIR}/FOMOD/Images/REF_Header.jpg"
+	DESTINATION "FOMOD/Images"
 	COMPONENT components
 )
