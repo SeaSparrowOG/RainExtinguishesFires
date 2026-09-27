@@ -127,13 +127,23 @@ SKSE_PLUGIN_LOAD(const SKSE::LoadInterface * a_skse)
 
 	const auto ver = a_skse->RuntimeVersion();
 
+#ifdef SKYRIM_GOG
+	static constexpr std::array<REL::Version, 4> supported = 
+	{
+		SKSE::RUNTIME_SSE_1_6_1130,
+		SKSE::RUNTIME_SSE_1_6_1170,
+		SKSE::RUNTIME_SSE_1_6_1179,
+		REL::Version(1, 6, 1179, 1) // no idea what this is still
+	};
+#else
 	static constexpr std::array<REL::Version, 2> supported = 
 	{
 		SKSE::RUNTIME_SSE_1_7_104,
 		SKSE::RUNTIME_SSE_1_7_99
-	};
+	};	
+#endif
 
-	if (!std::ranges::contains(supported, ver)) {
+	if ((ver < SKSE::RUNTIME_SSE_LATEST) && (!std::ranges::contains(supported, ver))) {
 		REX::CRITICAL("Game Version: {}"sv, ver.string());
 		REX::CRITICAL("Supported Versions:"sv);
 		for (const auto& allowed : supported) {

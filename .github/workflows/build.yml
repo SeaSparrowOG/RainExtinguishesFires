@@ -16,9 +16,17 @@ jobs:
   build:
     runs-on: windows-latest
 
+    strategy:
+      matrix:
+        include:
+          - preset: vs-windows-vcpkg-github
+            artifact: release
+          - preset: vs-windows-vcpkg-github-gog
+            artifact: gog
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           submodules: recursive
 
@@ -71,7 +79,7 @@ jobs:
           git -C "${{ env.VCPKG_ROOT }}" rev-parse HEAD
 
       - name: Cache vcpkg
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         id: vcpkg-cache
         env:
           cache-name: vcpkg-cache
@@ -81,7 +89,7 @@ jobs:
 
       - name: Configure CMake
         run: |
-          cmake --preset vs-windows-vcpkg-github -Wno-deprecated
+          cmake --preset ${{ matrix.preset }} -Wno-deprecated
 
       - name: Build
         run: |
@@ -93,7 +101,7 @@ jobs:
           cmake --install ${{ github.workspace }}/build --component "SKSEPlugin" --config ${{ env.BUILD_TYPE }} --prefix ${{ github.workspace }}/ReleaseBuild
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
-          name: ${{ github.event.repository.name }}
+          name: ${{ github.event.repository.name }}-${{ matrix.artifact }}
           path: ${{ github.workspace }}/ReleaseBuild

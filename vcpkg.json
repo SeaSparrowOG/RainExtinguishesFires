@@ -1,15 +1,25 @@
 {
   "name": "rainextinguishesfires",
-  "version-string": "5.1.1",
+  "version-string": "5.1.2",
   "description": "SKSE Plugin companion for Rain Extinguishes Fires.",
   "homepage": "https://github.com/SeaSparrowOG/RainExtinguishesFires",
   "license": "GPL-3.0-or-later",
   "dependencies": [
-    "commonlib-shared",
+    "boost-stl-interfaces",
     "clib-util",
+    "commonlib-shared",
+    "fmt",
     "jsoncpp",
-    "magic-enum",
+    "rsm-binary-io",
+    "simpleini",
+    "spdlog",
     "xbyak"
   ],
-  "builtin-baseline": "eae1680538b86f962455c27abca2aad0dc304a4d"
+  "builtin-baseline": "89dd0f4d241136b843fb55813b2f0fa6448c204d",
+  "overrides": [
+    {
+      "name": "xbyak",
+      "version": "7.23.1"
+    }
+  ]
 }

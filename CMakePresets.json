@@ -19,7 +19,7 @@
       "hidden": true,
       "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
-        "VCPKG_OVERLAY_PORTS": "${sourceDir}/External/CommonLibSSE/cmake/ports;${sourceDir}/cmake/ports;${sourceDir}/cmake/ports"
+        "VCPKG_OVERLAY_PORTS": "${sourceDir}/cmake/ports;${sourceDir}/External/CommonLibSSE/cmake/ports"
       }
     },
     {
@@ -49,6 +49,14 @@
       }
     },
     {
+      "name": "release-gog",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build-gog",
+      "cacheVariables": {
+        "FULL_RELEASE": true
+      }
+    },
+    {
       "name": "test",
       "hidden": true,
       "binaryDir": "${sourceDir}/build-test"
@@ -63,7 +71,24 @@
         "release"
       ],
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
+        "CMAKE_BUILD_TYPE": "Release",
+        "GOG": false,
+        "SKIP_ARTIFACTS": true
+      }
+    },
+    {
+      "name": "vs-windows-vcpkg-github-gog",
+      "inherits": [
+        "cmake-dev",
+        "vcpkg",
+        "windows",
+        "vs",
+        "release"
+      ],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "SKIP_ARTIFACTS": true,
+        "GOG": true
       }
     },
     {
@@ -76,7 +101,24 @@
         "release"
       ],
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
+        "CMAKE_BUILD_TYPE": "Release",
+        "GOG": false,
+        "SKIP_ARTIFACTS": false
+      }
+    },
+    {
+      "name": "vs-windows-vcpkg-release-gog",
+      "inherits": [
+        "cmake-dev",
+        "vcpkg",
+        "windows",
+        "vs",
+        "release-gog"
+      ],
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "GOG": true,
+        "SKIP_ARTIFACTS": false
       }
     },
     {
@@ -89,7 +131,9 @@
         "test"
       ],
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
+        "CMAKE_BUILD_TYPE": "Debug",
+        "GOG": false,
+        "SKIP_ARTIFACTS": false
       }
     }
   ],
@@ -102,6 +146,11 @@
     {
       "name": "Release",
       "configurePreset": "vs-windows-vcpkg-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "Release-GOG",
+      "configurePreset": "vs-windows-vcpkg-release-gog",
       "configuration": "Release"
     },
     {
