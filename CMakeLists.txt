@@ -229,6 +229,7 @@ install(
 	FILES
 		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}/defaultFires.json"
 		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}/embersXDCampfires.json"
+		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}/diverseCampfires.json"
 	DESTINATION "02. Fire Options/01. Campfires/SKSE/Plugins/${PROJECT_NAME}/"
 	COMPONENT components
 )
