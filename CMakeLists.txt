@@ -7,7 +7,7 @@ option(COPY_PSC "Copies any script sources to the MO2 directory (if specified). 
 # -------- Project ----------
 project(
 	RainExtinguishesFires
-	VERSION 5.1.2
+	VERSION 5.1.3
 	LANGUAGES CXX
 )
 
@@ -72,6 +72,36 @@ target_include_directories(
 		${CLIB_UTIL_INCLUDE_DIRS}
 )
 
+if (MSVC)
+	target_compile_options(
+		${PROJECT_NAME}
+		PRIVATE
+			/sdl                    # Enable Additional Security Checks
+			/utf-8                  # Set Source and Executable character sets to UTF-8
+			/Zi                     # Debug Information Format
+
+			/permissive-            # Standards conformance
+			/Zc:preprocessor        # Enable preprocessor conformance mode
+			/Zc:__cplusplus
+			
+			/wd4200                 # nonstandard extension used : zero-sized array in struct/union
+			/W4                     # More warnings 
+			/WX                     # Treat all warnings as errors
+			/external:anglebrackets # Ignore warnings for external resources.
+			/external:W0            # Same as above
+			
+			"$<$<CONFIG:DEBUG>:>"
+			"$<$<CONFIG:RELEASE>:/Zc:inline;/JMC-;/Ob3>"
+	)
+
+	target_link_options(
+		${PROJECT_NAME}
+		PRIVATE
+			"$<$<CONFIG:DEBUG>:/INCREMENTAL;/OPT:NOREF;/OPT:NOICF>"
+			"$<$<CONFIG:RELEASE>:/INCREMENTAL:NO;/OPT:REF;/OPT:ICF;/DEBUG:FULL>"
+	)
+endif ()
+
 set(DATA_DIR "${PROJECT_SOURCE_DIR}/data")
 
 include(components.cmake)
@@ -91,7 +121,12 @@ endif()
 include(Papyrus)
 include(BSArchive)
 
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Data/Source/Scripts" AND NOT SKIP_ARTIFACTS)
+if(
+	NOT SKIP_ARTIFACTS
+	AND Skyrim64Path
+	AND IS_DIRECTORY "${Skyrim64Path}/tools"
+	AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Data/Source/Scripts"
+)
 	file(GLOB ${PROJECT_NAME}_SOURCES
 		LIST_DIRECTORIES false
 		CONFIGURE_DEPENDS
@@ -194,6 +229,7 @@ install(
 	FILES
 		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}/defaultFires.json"
 		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}/embersXDCampfires.json"
+		"${DATA_DIR}/SKSE/Plugins/${PROJECT_NAME}/diverseCampfires.json"
 	DESTINATION "02. Fire Options/01. Campfires/SKSE/Plugins/${PROJECT_NAME}/"
 	COMPONENT components
 )
